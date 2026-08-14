@@ -27,6 +27,9 @@
       }
     ]
   },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
   "license": "MIT",
   "dependencies": {
     "@deepseek-ai/cordis": "workspace:^",

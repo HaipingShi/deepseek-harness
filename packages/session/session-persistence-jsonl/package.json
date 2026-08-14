@@ -26,6 +26,9 @@
     "lib/worker.cjs",
     "lib/types/**/*.d.ts"
   ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
   "license": "MIT",
   "peerDependencies": {
     "@deepseek-ai/dsh-session": "workspace:^",

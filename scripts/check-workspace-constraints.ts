@@ -78,6 +78,7 @@ export interface PackageManifest {
   type?: string
   main?: string
   types?: string
+  engines?: { node?: string }
   bin?: string | Record<string, string>
   exports?: Record<
     string,
@@ -117,6 +118,14 @@ const rootManifest = readJson(join(root, 'package.json'))
 const repositoryVersion = rootManifest.version
 const nativeWorkspaceManifest = readJson(join(root, 'native/system/package.json'))
 const nativeVersion = nativeWorkspaceManifest.version
+/**
+ * The family's Node floor, carried by the root manifest. The published CLI
+ * boots `@deepseek-ai/dsh-session-persistence-jsonl`, whose `node:zlib` zstd
+ * imports die with an export-name syntax error on Node lines below the floor —
+ * so the user-facing entry packages must state the same engines, or npm
+ * installs them on unsupported Node with no warning at all.
+ */
+const requiredNodeEngines = rootManifest.engines?.node
 
 /** Repo-relative dirs holding a package.json, walked to the configured depth. */
 function packageDirs(base: string, depth: number): string[] {
@@ -408,6 +417,14 @@ export function checkWorkspaceManifest({ dir, manifest }: WorkspaceManifest): st
     } else if (!sameStringList(manifest.files, expectedFiles)) {
       errors.push(`${label}: package.json files must be ${JSON.stringify(expectedFiles)}`)
     }
+    // The apps are what an end user installs and boots; without engines here,
+    // npm places them on an unsupported Node line with nothing but a cryptic
+    // zstd export error at boot (the floor itself is the root manifest's).
+    // Private app manifests never reach npm, so the floor is not required.
+    if (requiredNodeEngines !== undefined && manifest.private !== true
+      && manifest.engines?.node !== requiredNodeEngines) {
+      errors.push(`${label}: package.json engines.node must be ${JSON.stringify(requiredNodeEngines)}`)
+    }
   }
 
   if (isNativePackageDir) {
@@ -460,6 +477,14 @@ export function checkWorkspaceManifest({ dir, manifest }: WorkspaceManifest): st
     if (!sameStringList(manifest.files, expectedFiles)) {
       errors.push(`${label}: package.json files must be ${JSON.stringify(expectedFiles)}`)
     }
+    // Optional but uniform: a package that states the floor must state the
+    // family's, never a private one (packages are not booted standalone, but a
+    // stale floor here still misleads anyone reading the manifest).
+    if (requiredNodeEngines !== undefined
+      && manifest.engines !== undefined
+      && manifest.engines?.node !== requiredNodeEngines) {
+      errors.push(`${label}: package.json engines.node must be ${JSON.stringify(requiredNodeEngines)} when declared`)
+    }
   }
 
   return errors.map(error => `${relative(root, join(root, dir, 'package.json'))}: ${error}`)
@@ -496,6 +521,12 @@ function checkRepositoryVersion(): string[] {
   // 0.0.1-rc.1 is a valid state between `release:dsh` and its publication.
   if (repositoryVersion && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(repositoryVersion)) return []
   return ['package.json: version must be X.Y.Z with an optional prerelease segment']
+}
+
+/** The root is the single source of the family Node floor; every engines check reads it. */
+function checkRootNodeEngines(): string[] {
+  if (rootManifest.engines?.node) return []
+  return ['package.json: root must declare engines.node — the published family carries this floor and the CLI bin guard reads it']
 }
 
 /** Dependency sections whose ranges reach a published tarball or a local install. */
@@ -566,6 +597,7 @@ export function main(): void {
   ]
   const errors = [
     ...checkRepositoryVersion(),
+    ...checkRootNodeEngines(),
     ...manifests.flatMap(checkWorkspaceManifest),
     ...checkWorkspaceProtocol(manifests),
     ...checkExperimentalDependencyIsolation(dependencyManifests),
