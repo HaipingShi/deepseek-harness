@@ -13,6 +13,21 @@ import { fileURLToPath } from 'node:url'
 import { loadLayeredEnv } from '@deepseek-ai/dsh-app-boot'
 import { parseDshArgs } from './args.ts'
 
+/**
+ * The family Node floor, mirrored from package.json `engines`. npm treats
+ * engines as a warning, so an unsupported Node still reaches dispatch and dies
+ * deep inside plugin loading on `node:zlib`'s missing zstd exports — an error
+ * that names no Node version at all. Checked before anything else, so the
+ * message an unsupported user sees names the fix. Keep the predicate in sync
+ * with the engines range; check-workspace-constraints keeps the manifest side.
+ */
+const REQUIRED_NODE_RANGE = '^22.19.0 || >=24.0.0'
+const [nodeMajor, nodeMinor] = process.versions.node.split('.').map(Number)
+if (!((nodeMajor === 22 && nodeMinor >= 19) || nodeMajor >= 24)) {
+  console.error(`error: dsh requires Node ${REQUIRED_NODE_RANGE}, found ${process.versions.node}; upgrade Node and retry`)
+  process.exit(1)
+}
+
 // Both the source tree (apps/cli/src) and the bundled bin (apps/cli/lib) sit
 // one directory under apps/cli, so the checked-in manifest resolves with the
 // same relative hop from either artifact.
