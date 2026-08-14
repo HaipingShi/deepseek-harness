@@ -12,6 +12,21 @@ import { parseDshArgs } from './args.ts'
 import { reportStartupFailure } from './startup-diagnostics.ts'
 import type { RunProfileOptions } from './profile-boot.ts'
 
+/**
+ * The family Node floor, mirrored from package.json `engines`. npm treats
+ * engines as a warning, so an unsupported Node still reaches dispatch and dies
+ * deep inside plugin loading on `node:zlib`'s missing zstd exports — an error
+ * that names no Node version at all. Checked before anything else, so the
+ * message an unsupported user sees names the fix. Keep the predicate in sync
+ * with the engines range; check-workspace-constraints keeps the manifest side.
+ */
+const REQUIRED_NODE_RANGE = '^22.19.0 || >=24.0.0'
+const [nodeMajor = 0, nodeMinor = 0] = process.versions.node.split('.').map(Number)
+if (!((nodeMajor === 22 && nodeMinor >= 19) || nodeMajor >= 24)) {
+  console.error(`error: dsh requires Node ${REQUIRED_NODE_RANGE}, found ${process.versions.node}; upgrade Node and retry`)
+  process.exit(1)
+}
+
 /** Installation-owned dependencies supplied by a packaged CLI launcher. */
 export type RunCliOptions = Pick<RunProfileOptions, 'packageManager'> & {
   /** Permit plugin commands for Desktop's existing profile; reserved for its installed carrier. */
