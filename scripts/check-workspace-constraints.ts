@@ -66,6 +66,7 @@ interface PackageManifest {
   type?: string
   main?: string
   types?: string
+  engines?: { node?: string }
   bin?: string | Record<string, string>
   exports?: Record<
     string,
@@ -98,6 +99,14 @@ function readJson(path: string): PackageManifest {
 
 const rootManifest = readJson(join(root, 'package.json'))
 const repositoryVersion = rootManifest.version
+/**
+ * The family's Node floor, carried by the root manifest. The published CLI
+ * boots `@deepseek-ai/dsh-session-persistence-jsonl`, whose `node:zlib` zstd
+ * imports die with an export-name syntax error on Node lines below the floor —
+ * so the user-facing entry packages must state the same engines, or npm
+ * installs them on unsupported Node with no warning at all.
+ */
+const requiredNodeEngines = rootManifest.engines?.node
 const landlockWorkspaceManifest = readJson(join(root, 'native/landlock-run/package.json'))
 const landlockVersion = landlockWorkspaceManifest.version
 
@@ -286,6 +295,12 @@ function checkWorkspace({ dir, manifest }: WorkspaceManifest): string[] {
     } else if (!sameStringList(manifest.files, expectedFiles)) {
       errors.push(`${label}: package.json files must be ${JSON.stringify(expectedFiles)}`)
     }
+    // The apps are what an end user installs and boots; without engines here,
+    // npm places them on an unsupported Node line with nothing but a cryptic
+    // zstd export error at boot (the floor itself is the root manifest's).
+    if (requiredNodeEngines !== undefined && manifest.engines?.node !== requiredNodeEngines) {
+      errors.push(`${label}: package.json engines.node must be ${JSON.stringify(requiredNodeEngines)}`)
+    }
   }
 
   if (isLandlockPackageDir) {
@@ -341,6 +356,14 @@ function checkWorkspace({ dir, manifest }: WorkspaceManifest): string[] {
     if (!sameStringList(manifest.files, expectedFiles)) {
       errors.push(`${label}: package.json files must be ${JSON.stringify(expectedFiles)}`)
     }
+    // Optional but uniform: a package that states the floor must state the
+    // family's, never a private one (packages are not booted standalone, but a
+    // stale floor here still misleads anyone reading the manifest).
+    if (requiredNodeEngines !== undefined
+      && manifest.engines !== undefined
+      && manifest.engines?.node !== requiredNodeEngines) {
+      errors.push(`${label}: package.json engines.node must be ${JSON.stringify(requiredNodeEngines)} when declared`)
+    }
   }
 
   return errors.map(error => `${relative(root, join(root, dir, 'package.json'))}: ${error}`)
@@ -379,6 +402,12 @@ function checkRepositoryVersion(): string[] {
   return ['package.json: version must be X.Y.Z with an optional prerelease segment']
 }
 
+/** The root is the single source of the family Node floor; every engines check reads it. */
+function checkRootNodeEngines(): string[] {
+  if (rootManifest.engines?.node) return []
+  return ['package.json: root must declare engines.node — the published family carries this floor and the CLI bin guard reads it']
+}
+
 /** Dependency sections whose ranges reach a published tarball or a local install. */
 const dependencySections = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'] as const
 
@@ -409,6 +438,7 @@ function checkWorkspaceProtocol(manifests: readonly WorkspaceManifest[]): string
 const manifests = workspaceManifests()
 const errors = [
   ...checkRepositoryVersion(),
+  ...checkRootNodeEngines(),
   ...manifests.flatMap(checkWorkspace),
   ...checkWorkspaceProtocol(manifests),
   ...checkHierarchyShape(),

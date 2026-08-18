@@ -30,6 +30,9 @@
     "lib/invariant.js",
     "lib/types/**/*.d.ts"
   ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
   "license": "MIT",
   "peerDependencies": {
     "@deepseek-ai/dsh-invariants": "workspace:^",
