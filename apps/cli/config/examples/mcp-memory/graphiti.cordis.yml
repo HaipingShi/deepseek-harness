@@ -1,5 +1,5 @@
 # Opt-in reference for Graphiti MCP mcp-v1.0.2 at commit 19e44a97a929ebf121294f97f26966f0379d8e30.
-# Run the reviewed service separately; this client accepts only a loopback HTTP endpoint.
+# Build it with graphiti.Dockerfile and run it separately; this client accepts only a loopback HTTP endpoint.
 - insert:
     - id: memory-graphiti
       name: '@deepseek-ai/dsh-mcp-client'

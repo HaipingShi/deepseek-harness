@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-graphiti-mcp-memory-example.md
-2026-08-31-graphiti-mcp-memory-example.md: e1bbdabab66949c26fb063c527d4c6658dd77438
-2026-08-31-graphiti-mcp-memory-example.zh.md: d1c662277a4c1c6b5aa67117a854b92d387e6376
+2026-08-31-graphiti-mcp-memory-example.md: 8ab353f967213243c1e586fc9bddc8658699d22b
+2026-08-31-graphiti-mcp-memory-example.zh.md: 5477c2912ec51f5dc3795a1cfaf70eb59a2f508d

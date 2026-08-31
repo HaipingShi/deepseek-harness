@@ -66,7 +66,18 @@ Engram owns storage and project selection: it uses `~/.engram` by default, detec
 
 ### Graphiti
 
-Run the reviewed Graphiti MCP service and its database separately, bind its MCP listener to loopback, then point DSH at the full `/mcp/` endpoint:
+The reviewed tag's Dockerfiles are not reproducible as published: the combined image depends on a drifting FalkorDB base, while the standalone image regenerates the Python lock and currently selects incompatible MCP v2; it also omits the `httpx` runtime dependency imported by Graphiti Core 0.28.2. Build the repository compatibility Dockerfile from the exact upstream source instead:
+
+```sh
+git clone --branch mcp-v1.0.2 --depth 1 https://github.com/getzep/graphiti.git graphiti-mcp-v1.0.2
+test "$(git -C graphiti-mcp-v1.0.2 rev-parse HEAD)" = 19e44a97a929ebf121294f97f26966f0379d8e30
+docker build \
+  --file "$PWD/apps/cli/config/examples/mcp-memory/graphiti.Dockerfile" \
+  --tag dsh-graphiti-mcp:mcp-v1.0.2-compat \
+  graphiti-mcp-v1.0.2/mcp_server
+```
+
+The compatibility Dockerfile pins its Python and uv base image digests, Graphiti Core 0.28.2, `httpx` 0.28.1, and MCP 1.26.0. It is a reviewed workaround for this source commit, not a DSH-owned Graphiti distribution; review and rebuild it when any pin changes. Run that image and a separately pinned database under operator supervision, bind only the MCP listener to loopback, then point DSH at the full `/mcp/` endpoint:
 
 ```sh
 export DSH_GRAPHITI_MCP_URL='http://127.0.0.1:8000/mcp/'

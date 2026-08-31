@@ -95,6 +95,21 @@ async function waitForTool(ctx: Context, name: string): Promise<void> {
 }
 
 describe('third-party memory MCP example overlays', () => {
+  it('pins the reviewed Graphiti compatibility image inputs', () => {
+    const source = readFileSync(resolve(exampleDir, 'graphiti.Dockerfile'), 'utf8')
+
+    expect(source).toContain('19e44a97a929ebf121294f97f26966f0379d8e30')
+    expect(source).toContain('graphiti-core==0.28.2')
+    expect(source).toContain('httpx==0.28.1')
+    expect(source).toContain('mcp==1.26.0')
+    expect(source).toContain('python:3.11-slim-bookworm@sha256:0bee7276f83efd4a1ee05bbbf4281d95ed28e079220a9457f25a93e3f1e3c31b')
+    expect(source).toContain('ghcr.io/astral-sh/uv:0.8.22@sha256:9874eb7afe5ca16c363fe80b294fe700e460df29a55532bbfea234a0f12eddb1')
+    const baseImages = source.match(/^FROM .+$/gm)
+    expect(baseImages).toHaveLength(2)
+    expect(baseImages?.every(line => line.includes('@sha256:'))).toBe(true)
+    expect(source).not.toMatch(/FROM\s+\S+:latest(?:\s|$)/)
+  })
+
   it.each(examples)('parses $file with the documented generic plugin fields', (contract) => {
     if (contract.serverName === 'graphiti') process.env.DSH_GRAPHITI_MCP_URL = 'http://127.0.0.1:43123/mcp/'
     const file = resolve(exampleDir, contract.file)

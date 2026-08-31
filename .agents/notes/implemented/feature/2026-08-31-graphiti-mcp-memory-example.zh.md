@@ -12,13 +12,15 @@
 
 将 Graphiti MCP `mcp-v1.0.2` 作为第四个默认关闭的记忆覆盖层。覆盖层通过通用 Streamable HTTP 客户端连接，要求显式 `DSH_GRAPHITI_MCP_URL`，只接受回环主机名上的普通 HTTP，不发送 header 或 provider 凭据，并在启动无法发现服务时响亮失败。Graphiti 及其数据库由运维方单独监管。
 
-指南记录 tag commit、Graphiti Core 0.28.2+ 的安全下限、上游遥测关闭方式、异步写入、group 作用域和完整的读/写/删除/维护工具接口。网络部署需要单独的认证入口决策，本回环参考配置刻意不表达该部署。
+已审阅 tag 的组合 Dockerfile 使用可变的 FalkorDB 基础镜像，独立 Dockerfile 则会在解析无上限的 MCP 主版本前丢弃锁文件，并随开发依赖组排除实际导入的 `httpx` 依赖。在覆盖层旁交付一份兼容 Dockerfile，从该 tag 的精确 `mcp_server` 目录构建，并固定 Python 与 uv 镜像 digest、Graphiti Core 0.28.2、`httpx` 0.28.1 和 MCP 1.26.0。该配方仍由运维方构建并单独监管，不会把 Graphiti 生命周期移入 DSH。
+
+指南记录 tag commit、兼容版本、上游遥测关闭方式、异步写入、group 作用域和完整的读/写/删除/维护工具接口。网络部署需要单独的认证入口决策，本回环参考配置刻意不表达该部署。
 
 ## 验证
 
-无密钥记忆套件解析全部四个示例，检查每个版本和通用 MCP 字段，通过真实 Loader 激活路径拒绝缺失或非回环的 Graphiti 端点，将仓库内 HTTP 传输连接到包自有 fixture，并观察已发现工具。现有传输替换矩阵还证明 Graphiti 配置项可以通过通用客户端加载，且不接触第三方。
+无密钥记忆套件解析全部四个示例，检查每个版本和通用 MCP 字段，通过静态检查拒绝兼容镜像已审阅输入的漂移，通过真实 Loader 激活路径拒绝缺失或非回环的 Graphiti 端点，将仓库内 HTTP 传输连接到包自有 fixture，并观察已发现工具。现有传输替换矩阵还证明 Graphiti 配置项可以通过通用客户端加载，且不接触第三方。
 
-测试不会运行 Graphiti、图数据库、LLM 或 embedding provider、异步提取、持久化、删除、认证或遥测。真实验收仍需要在一个已审阅 group id 下提供写入、新会话召回和使用证据。
+默认测试不会运行 Graphiti、图数据库、LLM 或 embedding provider、异步提取、持久化、删除、认证或遥测。单独的本地 canary 会构建精确源码 commit，在内部网络启动固定版本的数据库与兼容镜像，等待健康检查，并通过回环端点发现 MCP 工具。完整的真实验收仍需要在一个已审阅 group id 下提供写入、新会话召回和使用证据。
 
 ## 考虑过的替代方案
 

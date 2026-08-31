@@ -66,7 +66,18 @@ Engram 负责存储和项目选择：它默认使用 `~/.engram`，从 DSH 工�
 
 ### Graphiti
 
-单独运行已审阅的 Graphiti MCP 服务及其数据库，将 MCP 监听器绑定到回环地址，再让 DSH 指向完整的 `/mcp/` 端点：
+已审阅 tag 的原始 Dockerfile 不能按发布内容复现：组合镜像依赖会漂移的 FalkorDB 基础镜像，独立镜像会重新生成 Python 锁文件并在当前选中不兼容的 MCP v2；它还遗漏 Graphiti Core 0.28.2 实际导入的 `httpx` 运行时依赖。请从精确的上游源码构建仓库提供的兼容 Dockerfile：
+
+```sh
+git clone --branch mcp-v1.0.2 --depth 1 https://github.com/getzep/graphiti.git graphiti-mcp-v1.0.2
+test "$(git -C graphiti-mcp-v1.0.2 rev-parse HEAD)" = 19e44a97a929ebf121294f97f26966f0379d8e30
+docker build \
+  --file "$PWD/apps/cli/config/examples/mcp-memory/graphiti.Dockerfile" \
+  --tag dsh-graphiti-mcp:mcp-v1.0.2-compat \
+  graphiti-mcp-v1.0.2/mcp_server
+```
+
+兼容 Dockerfile 固定 Python 与 uv 基础镜像 digest、Graphiti Core 0.28.2、`httpx` 0.28.1 和 MCP 1.26.0。它是针对该源码 commit 的已审阅规避方案，不是 DSH 维护的 Graphiti 发行版；任何版本发生变化时都应重新审阅并构建。由运维方单独监管该镜像及一个固定版本的数据库，只把 MCP 监听器绑定到回环地址，再让 DSH 指向完整的 `/mcp/` 端点：
 
 ```sh
 export DSH_GRAPHITI_MCP_URL='http://127.0.0.1:8000/mcp/'
