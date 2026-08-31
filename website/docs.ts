@@ -162,6 +162,14 @@ const homeAndGuide = pairedPages([
     section: { root: '集成', en: 'Integrations' },
     order: 1,
   },
+  {
+    source: 'docs/user/guide/mcp-runtime.md',
+    route: 'guide/mcp-runtime.md',
+    label: { root: 'ToolHive MCP 运行时', en: 'ToolHive MCP runtime' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '集成', en: 'Integrations' },
+    order: 2,
+  },
 ])
 
 const develop = pairedPages([

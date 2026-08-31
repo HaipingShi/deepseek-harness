@@ -1,0 +1,7 @@
+# Minimal keyless composition for loading community MCP overlays against the
+# package-owned fixtures in community-mcp-configs.spec.ts.
+- id: system-prompt
+  name: cordis:community-mcp-test-system-prompt
+
+- id: tools
+  name: cordis:community-mcp-test-tools

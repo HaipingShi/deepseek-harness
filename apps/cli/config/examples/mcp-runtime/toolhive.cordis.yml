@@ -1,0 +1,11 @@
+# Opt-in ToolHive v0.46.0 proxy connection. Start and inspect the pinned
+# ToolHive workload first, then pass its loopback /mcp URL through the env.
+- insert:
+    - id: mcp-toolhive
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: toolhive
+        transport: streamable-http
+        url: !!js process.env.DSH_TOOLHIVE_MCP_URL
+        headers: {}
+        failOnStartupError: true
