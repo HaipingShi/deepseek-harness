@@ -194,6 +194,14 @@ const homeAndGuide = pairedPages([
     section: { root: '集成', en: 'Integrations' },
     order: 5,
   },
+  {
+    source: 'docs/user/guide/microsandbox-mcp.md',
+    route: 'guide/microsandbox-mcp.md',
+    label: { root: 'Microsandbox 微虚拟机', en: 'Microsandbox microVMs' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '集成', en: 'Integrations' },
+    order: 6,
+  },
 ])
 
 const develop = pairedPages([

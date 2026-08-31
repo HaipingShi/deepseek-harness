@@ -1,0 +1,20 @@
+# Opt-in reference for microsandbox-mcp 0.6.16. Install the pinned
+# `microsandbox-mcp` executable first; DSH never runs a package manager here.
+- insert:
+    - id: mcp-microsandbox
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: microsandbox
+        transport: stdio
+        command: microsandbox-mcp
+        args: []
+        cwd: !!js process.cwd()
+        env:
+          MICROSANDBOX_MCP_HOST_PATHS: !!js process.env.DSH_MICROSANDBOX_HOST_PATHS
+          MICROSANDBOX_MCP_HOST_PATH_POLICY: allowlist
+          MICROSANDBOX_MCP_ENABLE_DANGEROUS: '0'
+          MICROSANDBOX_MCP_MAX_OUTPUT_BYTES: '262144'
+          MICROSANDBOX_MCP_DEFAULT_TIMEOUT_MS: '60000'
+          MSB_BACKEND: local
+        toolCallTimeoutMs: 65000
+        failOnStartupError: true

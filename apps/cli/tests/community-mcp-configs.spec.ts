@@ -24,12 +24,14 @@ interface InsertedRow {
 const root = resolve(import.meta.dirname, '../../..')
 const toolHiveOverlay = resolve(root, 'apps/cli/config/examples/mcp-runtime/toolhive.cordis.yml')
 const playwrightOverlay = resolve(root, 'apps/cli/config/examples/mcp-browser/playwright.cordis.yml')
+const microsandboxOverlay = resolve(root, 'apps/cli/config/examples/mcp-sandbox/microsandbox.cordis.yml')
 const baseConfig = resolve(import.meta.dirname, 'fixtures/community-mcp-base.cordis.yml')
 const fixtureServer = resolve(root, 'packages/mcp/mcp-client/tests/fixture-server.ts')
 const liveContexts = new Set<Context>()
 const fixtures = new Set<HttpMcpFixture>()
 const originalToolHiveUrl = process.env.DSH_TOOLHIVE_MCP_URL
 const originalPlaywrightAllowedOrigins = process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS
+const originalMicrosandboxHostPaths = process.env.DSH_MICROSANDBOX_HOST_PATHS
 
 afterEach(async () => {
   await Promise.all([...liveContexts].map(async ctx => ctx.fiber.dispose()))
@@ -40,6 +42,8 @@ afterEach(async () => {
   else process.env.DSH_TOOLHIVE_MCP_URL = originalToolHiveUrl
   if (originalPlaywrightAllowedOrigins === undefined) delete process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS
   else process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS = originalPlaywrightAllowedOrigins
+  if (originalMicrosandboxHostPaths === undefined) delete process.env.DSH_MICROSANDBOX_HOST_PATHS
+  else process.env.DSH_MICROSANDBOX_HOST_PATHS = originalMicrosandboxHostPaths
 })
 
 function insertedRow(patches: PatchOptions[]): InsertedRow {
@@ -162,5 +166,55 @@ describe('Playwright MCP browser example overlay', () => {
       toolCallTimeoutMs: 5_000,
     })
     await waitForTool(ctx, 'mcp__playwright__greet')
+  }, 15_000)
+})
+
+describe('Microsandbox MCP microVM example overlay', () => {
+  it('pins a local backend with an explicit host-path allowlist', () => {
+    process.env.DSH_MICROSANDBOX_HOST_PATHS = root
+    const source = readFileSync(microsandboxOverlay, 'utf8')
+    const row = insertedRow(loadOverlayPatches('community-mcp-config-test', microsandboxOverlay))
+
+    expect(source.split('\n', 1)[0]).toContain('microsandbox-mcp 0.6.16')
+    expect(row.id).toBe('mcp-microsandbox')
+    expect(row.name).toBe('@deepseek-ai/dsh-mcp-client')
+    expect(row.config).toMatchObject({
+      serverName: 'microsandbox',
+      transport: 'stdio',
+      command: 'microsandbox-mcp',
+      args: [],
+      env: {
+        MICROSANDBOX_MCP_HOST_PATHS: { __jsExpr: 'process.env.DSH_MICROSANDBOX_HOST_PATHS' },
+        MICROSANDBOX_MCP_HOST_PATH_POLICY: 'allowlist',
+        MICROSANDBOX_MCP_ENABLE_DANGEROUS: '0',
+        MICROSANDBOX_MCP_MAX_OUTPUT_BYTES: '262144',
+        MICROSANDBOX_MCP_DEFAULT_TIMEOUT_MS: '60000',
+        MSB_BACKEND: 'local',
+      },
+      toolCallTimeoutMs: 65_000,
+      failOnStartupError: true,
+    })
+    expect(source).toContain('MICROSANDBOX_MCP_HOST_PATHS: !!js process.env.DSH_MICROSANDBOX_HOST_PATHS')
+    expect(source).not.toMatch(/\b(?:npx|pnpm\s+dlx)\b/)
+    expect(source).not.toMatch(/MSB_(?:API_KEY|PROFILE)|unrestricted/)
+  })
+
+  it('rejects an unset host-path allowlist before starting Microsandbox', async () => {
+    delete process.env.DSH_MICROSANDBOX_HOST_PATHS
+    await expect(bootOverlay(microsandboxOverlay)).rejects.toThrow()
+  })
+
+  it('loads through the real Loader and discovers a keyless stdio fixture tool', async () => {
+    process.env.DSH_MICROSANDBOX_HOST_PATHS = root
+    const ctx = await bootOverlay(microsandboxOverlay, {
+      serverName: 'microsandbox',
+      transport: 'stdio',
+      command: process.execPath,
+      args: [fixtureServer],
+      cwd: root,
+      env: {},
+      toolCallTimeoutMs: 5_000,
+    })
+    await waitForTool(ctx, 'mcp__microsandbox__greet')
   }, 15_000)
 })
