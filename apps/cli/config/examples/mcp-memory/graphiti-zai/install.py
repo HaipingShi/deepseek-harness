@@ -1,7 +1,8 @@
-"""Install the version-locked Z.AI provider into Graphiti MCP v1.0.2 source."""
+"""Install version-locked Z.AI and FalkorDB compatibility patches."""
 
 from __future__ import annotations
 
+from importlib.util import find_spec
 from pathlib import Path
 import shutil
 import sys
@@ -17,18 +18,33 @@ def _replace_once(path: Path, old: str, new: str) -> None:
     path.write_text(source.replace(old, new, 1))
 
 
+def _find_graphiti_core_root() -> Path:
+    spec = find_spec("graphiti_core")
+    if spec is None or spec.origin is None:
+        raise RuntimeError("Graphiti Core is not installed")
+    return Path(spec.origin).resolve().parent
+
+
 def install(source_root: Path) -> None:
-    """Add the explicit `zai` config row and factory implementation."""
+    """Add the explicit `zai` provider and escape FalkorDB group-id hyphens."""
 
     schema_path = source_root / "config" / "schema.py"
     factory_path = source_root / "services" / "factories.py"
+    graphiti_core_root = _find_graphiti_core_root()
+    legacy_falkor_driver_path = graphiti_core_root / "driver" / "falkordb_driver.py"
+    falkor_search_path = graphiti_core_root / "driver" / "falkordb" / "operations" / "search_ops.py"
     client_source = Path(__file__).with_name("zai_graphiti_client.py")
     client_target = source_root / "services" / "zai_graphiti_client.py"
 
     if client_target.exists():
         raise RuntimeError(f"refusing to replace existing {client_target}")
     if not schema_path.is_file() or not factory_path.is_file():
-        raise RuntimeError(f"Graphiti source tree is incomplete: {source_root}")
+        raise RuntimeError(f"Graphiti MCP v1.0.2 source tree is incomplete: {source_root}")
+    missing_core_paths = [
+        path for path in (legacy_falkor_driver_path, falkor_search_path) if not path.is_file()
+    ]
+    if missing_core_paths:
+        raise RuntimeError(f"Graphiti Core 0.28.2 files are missing: {missing_core_paths}")
 
     _replace_once(
         schema_path,
@@ -76,6 +92,13 @@ def install(source_root: Path) -> None:
         "\n"
         "            case 'azure_openai':\n",
     )
+    for path in (legacy_falkor_driver_path, falkor_search_path):
+        _replace_once(
+            path,
+            "        escaped_group_ids = [f'\"{gid}\"' for gid in group_ids]\n",
+            "        escaped_group_ids = "
+            "['\"' + gid.replace('-', r'\\-') + '\"' for gid in group_ids]\n",
+        )
     shutil.copyfile(client_source, client_target)
 
 

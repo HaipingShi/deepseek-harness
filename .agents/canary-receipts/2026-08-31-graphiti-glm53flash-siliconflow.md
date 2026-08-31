@@ -2,16 +2,16 @@
 
 ## Outcome
 
-**PASS with the repository-owned `ZaiGraphitiClient`.** The initial operator override reached Z.AI but failed when `glm-5.3-flash` returned a top-level array instead of Graphiti Core's required object. The dedicated client now uses Chat Completions with thinking disabled, validates the requested Pydantic model, and permits one bounded repair call. The rebuilt Graphiti service persisted a real episode through SiliconFlow embeddings, and a fresh MCP session recalled the expected verification command.
+**PASS with the repository-owned `ZaiGraphitiClient` and FalkorDB group-filter repair.** The initial operator override reached Z.AI but failed when `glm-5.3-flash` returned a top-level array instead of Graphiti Core's required object. The dedicated client uses Chat Completions with thinking disabled, validates the requested Pydantic model, and permits one bounded repair call. The version-locked installer also escapes allowed hyphens in both Graphiti Core FalkorDB full-text query builders. The rebuilt service persisted an episode under an unchanged hyphenated group id through SiliconFlow embeddings, and a fresh MCP session recalled the expected verification command.
 
-This receipt records both the failed baseline and the successful continuation executed on 2026-08-31 in Asia/Shanghai. The final state was captured at `2026-08-31T22:12:11+0800`.
+This receipt records the failed baseline and both successful continuations executed on 2026-08-31 in Asia/Shanghai. The final state was captured at `2026-08-31T23:11:44+0800`.
 
 ## Reviewed scope
 
 | Item | Value |
 |---|---|
 | Graphiti MCP source | `mcp-v1.0.2`, commit `19e44a97a929ebf121294f97f26966f0379d8e30` |
-| Graphiti image | `dsh-graphiti-mcp:mcp-v1.0.2-zai`, image `sha256:5f28462e2971b8abcdd09fd44dba188ec6196f3e5de943428590c6792995f386` |
+| Graphiti image | `dsh-graphiti-mcp:mcp-v1.0.2-zai`, image `sha256:d9d5c19d32ab7babbdbe52457c4e516e37e27c4dcda6fe3d4233592b94dcb1ea` |
 | Graphiti Core | `0.28.2` |
 | FalkorDB image | `sha256:adbddd418916c25618564ff8597a919b08bc76452ebeb74eb985c38d7281df62` |
 | LLM | Z.AI Coding Plan, `glm-5.3-flash`, `https://api.z.ai/api/coding/paas/v4` |
@@ -19,10 +19,12 @@ This receipt records both the failed baseline and the successful continuation ex
 | Failed baseline group | `dsh-canary-20260831-glm53flash-bgem3` |
 | Dedicated-client group | `dshcanary20260831zaiclientv1` |
 | Dedicated-client text | `In project CanaryJuniper, the verification command is pnpm run verify-zai-adapter and the maintainer runs it before creating a commit.` |
+| Hyphen-compatibility group | `dsh-canary-20260831-zai-client-hyphen-v2` |
+| Hyphen-compatibility text | `In project CanaryCedar, the verification command is pnpm run verify-hyphen-group and the maintainer runs it before creating a commit.` |
 | Host MCP endpoint | `http://127.0.0.1:8010/mcp/` |
 | Persistent volume | `dsh_graphiti_falkordb_data` |
 
-The canary sent only the canary text and Graphiti extraction prompts to Z.AI. During the successful continuation, service logs recorded three HTTP 200 Chat Completions responses from Z.AI and eleven HTTP 200 embedding responses from SiliconFlow, including the fresh-session search embedding. Provider response identifiers and billing data were not retained, so this receipt does not claim exact provider-side billing or cost.
+The canaries sent only their canary text and Graphiti extraction prompts to Z.AI. During the final hyphen-compatibility continuation, service logs recorded four HTTP 200 Chat Completions responses from Z.AI and twelve HTTP 200 embedding responses from SiliconFlow, including the fresh-session search embedding. Provider response identifiers and billing data were not retained, so this receipt does not claim exact provider-side billing or cost.
 
 ## Runtime controls
 
@@ -30,7 +32,7 @@ The Compose project is `dsh-graphiti-live`. FalkorDB has no host-published port 
 
 Credentials remain outside the repository in `/Users/geesh/.dsh/graphiti/zai.env` and `/Users/geesh/.dsh/graphiti/siliconflow.env`; both files were mode `0600`, and their parent directory was mode `0700`. No credential value was printed or written to this receipt.
 
-The running image contains the repository-owned adapter from `apps/cli/config/examples/mcp-memory/graphiti-zai/`. It adds the explicit `zai` provider to the pinned Graphiti MCP v1.0.2 source, installs `ZaiGraphitiClient`, validates structured output against Graphiti's requested Pydantic model, and allows at most one application repair call. The previous `/Users/geesh/.dsh/graphiti/overrides/sitecustomize.py` remains on disk as baseline evidence but is no longer mounted or present in the Graphiti container's `PYTHONPATH`.
+The running image contains the repository-owned compatibility installer from `apps/cli/config/examples/mcp-memory/graphiti-zai/`. It adds the explicit `zai` provider to the pinned Graphiti MCP v1.0.2 source, installs `ZaiGraphitiClient`, validates structured output against Graphiti's requested Pydantic model, allows at most one application repair call, and escapes hyphens in both Graphiti Core 0.28.2 FalkorDB full-text group-filter implementations. The previous `/Users/geesh/.dsh/graphiti/overrides/sitecustomize.py` remains on disk as baseline evidence but is not mounted or present in the Graphiti container's `PYTHONPATH`.
 
 Configuration hashes at receipt time:
 
@@ -62,13 +64,22 @@ Health and protocol discovery prove only local service readiness. They do not sa
 6. A separately initialized MCP client called `search_memory_facts` with the question `What command should the CanaryJuniper maintainer run before creating a commit?`. It returned two facts containing `pnpm run verify-zai-adapter`, including `The maintainer runs pnpm run verify-zai-adapter before creating a commit`.
 7. Direct FalkorDB queries for the successful group returned 4 nodes and 5 relationships. This establishes model-backed extraction, embedding, persistence, and fresh-session semantic recall for this canary input.
 
+## Hyphen-compatibility continuation
+
+1. The failure reproduced directly against the populated FalkorDB index: `(@group_id:"dsh-canary-20260831-zai-client-v1")` returned `RediSearch: Syntax error at offset 15 near dsh`, while otherwise identical filters with each hyphen encoded as `\-` executed successfully. Graphiti Core 0.28.2 validates hyphens as allowed group-id characters but its two FalkorDB query builders only enclosed values in quotes.
+2. A failing installer test copied the pinned Graphiti Core package, installed the compatibility patch, and required both the legacy driver and operations-based query builder to produce `(@group_id:"dsh\-canary\-v1") (Canary)`. The test failed before the repair and passed after the installer applied the same exact-anchor replacement to both files.
+3. The rebuilt image reran all six Python tests and the provider-factory smoke. The running container reported image `sha256:d9d5c19d32ab7babbdbe52457c4e516e37e27c4dcda6fe3d4233592b94dcb1ea`; only Graphiti was recreated, while FalkorDB and its named volume remained attached.
+4. The live canary used group `dsh-canary-20260831-zai-client-hyphen-v2` without rewriting it. `add_memory` queued the CanaryCedar episode, and `get_episodes` observed it on the third five-second poll. No RediSearch or queue-processing error appeared in the service logs.
+5. A separately initialized MCP client asked which command CanaryCedar's maintainer should run before committing. `search_memory_facts` returned two facts containing `pnpm run verify-hyphen-group`, and both retained the exact hyphenated group id.
+6. Direct FalkorDB queries returned 5 nodes and 6 relationships for the hyphenated graph. This establishes extraction, embedding, persistence, and fresh-session semantic recall for the previously failing identifier class.
+
 Official references: [Z.AI API endpoints and Coding Plan restriction](https://docs.z.ai/api-reference/introduction), [Chat Completions request fields](https://docs.z.ai/api-reference/llm/chat-completion), and [thinking mode](https://docs.z.ai/guides/capabilities/thinking-mode).
 
 ## Residual state and risk
 
-`dsh-graphiti-live-falkordb-1` and `dsh-graphiti-live-graphiti-1` remain running and healthy. The named volume remains attached. The original failed graph and the hyphenated dedicated-client graph remain present with 0 nodes and 0 relationships; the successful alphanumeric graph remains present with 4 nodes and 5 relationships. No cleanup or destructive Graphiti tool was called.
+`dsh-graphiti-live-falkordb-1` and `dsh-graphiti-live-graphiti-1` remain running and healthy. The named volume remains attached. The original failed graphs remain present with 0 nodes and 0 relationships; the successful alphanumeric graph remains present with 4 nodes and 5 relationships; the successful hyphenated graph remains present with 5 nodes and 6 relationships. No cleanup or destructive Graphiti tool was called.
 
-Z.AI documents the Coding Plan endpoint for supported coding tools and recommends the general API for other uses; Graphiti eligibility under the Coding Plan remains operator-owned and unverified by this technical canary. The canary covers one short English memory and one semantic query, not multilingual quality, long episodes, sustained concurrency, rate limits, failure recovery, provider billing, or production availability. The FalkorDB failure also shows that this upstream version does not safely quote hyphenated group identifiers for its RediSearch query; callers should use the documented alphanumeric example identifiers until that separate issue is addressed.
+Z.AI documents the Coding Plan endpoint for supported coding tools and recommends the general API for other uses; Graphiti eligibility under the Coding Plan remains operator-owned and unverified by this technical canary. The canary covers short English memories and semantic queries, not multilingual quality, long episodes, sustained concurrency, rate limits, failure recovery, provider billing, or production availability. The group-filter repair is locked to the reviewed Graphiti Core 0.28.2 source and must be revalidated or removed when that dependency changes.
 
 ## Acceptance status
 
@@ -78,5 +89,5 @@ Z.AI documents the Coding Plan endpoint for supported coding tools and recommend
 - SiliconFlow embedding request and vector persistence: **PASS**
 - Graphiti episode extraction and persistence: **PASS**
 - Fresh-session semantic recall: **PASS**
-- Hyphenated Graphiti group identifiers: **FAIL; separate upstream query issue**
+- Hyphenated Graphiti group identifiers: **PASS with the version-locked two-path FalkorDB repair**
 - Production readiness: **NOT CLAIMED; provider eligibility and broader operational acceptance remain open**

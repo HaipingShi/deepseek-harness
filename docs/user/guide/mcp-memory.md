@@ -78,7 +78,7 @@ docker build \
   graphiti-mcp-v1.0.2/mcp_server
 ```
 
-The compatibility Dockerfile pins its Python and uv base image digests, Graphiti Core 0.28.2, `httpx` 0.28.1, and MCP 1.26.0. The named build context installs an explicit `zai` LLM provider that uses Z.AI's documented `json_object` mode with thinking disabled, validates every result against Graphiti's requested Pydantic model, makes at most one repair call for an invalid result, and raises an error without logging provider output when repair fails. The build runs the adapter's keyless tests and fails when its exact Graphiti source anchors drift.
+The compatibility Dockerfile pins its Python and uv base image digests, Graphiti Core 0.28.2, `httpx` 0.28.1, and MCP 1.26.0. The named build context installs an explicit `zai` LLM provider that uses Z.AI's documented `json_object` mode with thinking disabled, validates every result against Graphiti's requested Pydantic model, makes at most one repair call for an invalid result, and raises an error without logging provider output when repair fails. Its version-locked installer also escapes allowed hyphens in both Graphiti Core FalkorDB full-text group filters without changing the stored `group_id`. The build runs the compatibility tests and fails when its exact Graphiti source anchors drift.
 
 Configure the provider in Graphiti's YAML; all three values are required environment references, and the API URL must be `https://api.z.ai/api/paas/v4` or `https://api.z.ai/api/coding/paas/v4`:
 

@@ -119,6 +119,9 @@ describe('third-party memory MCP example overlays', () => {
     expect(adapter).toContain('"response_format": {"type": "json_object"}')
     expect(adapter).toContain('"extra_body": {"thinking": {"type": "disabled"}}')
     expect(installer).toContain("case 'zai':")
+    expect(installer).toContain('legacy_falkor_driver_path')
+    expect(installer).toContain('falkor_search_path')
+    expect(installer).toContain("gid.replace('-', r'\\\\-')")
     expect(`${adapter}\n${installer}`).not.toMatch(/\bsk-[A-Za-z0-9_-]{8,}\b/)
   })
 

@@ -78,7 +78,7 @@ docker build \
   graphiti-mcp-v1.0.2/mcp_server
 ```
 
-兼容 Dockerfile 固定 Python 与 uv 基础镜像 digest、Graphiti Core 0.28.2、`httpx` 0.28.1 和 MCP 1.26.0。命名构建上下文会安装显式的 `zai` LLM provider；该 provider 使用 Z.AI 文档定义的 `json_object` 模式并关闭 thinking，按 Graphiti 请求的 Pydantic 模型验证每个结果，对无效结果最多发起一次修复调用，并在修复失败时不记录 provider 输出而直接报错。构建过程运行适配器的无密钥测试，并在精确的 Graphiti 源码锚点发生漂移时失败。
+兼容 Dockerfile 固定 Python 与 uv 基础镜像 digest、Graphiti Core 0.28.2、`httpx` 0.28.1 和 MCP 1.26.0。命名构建上下文会安装显式的 `zai` LLM provider；该 provider 使用 Z.AI 文档定义的 `json_object` 模式并关闭 thinking，按 Graphiti 请求的 Pydantic 模型验证每个结果，对无效结果最多发起一次修复调用，并在修复失败时不记录 provider 输出而直接报错。版本锁定的安装器还会在 Graphiti Core 的两个 FalkorDB 全文 group filter 中转义允许的连字符，但不会改变持久化的 `group_id`。构建过程运行兼容测试，并在精确的 Graphiti 源码锚点发生漂移时失败。
 
 在 Graphiti YAML 中配置该 provider；以下三个值都必须引用环境变量，API URL 必须是 `https://api.z.ai/api/paas/v4` 或 `https://api.z.ai/api/coding/paas/v4`：
 
