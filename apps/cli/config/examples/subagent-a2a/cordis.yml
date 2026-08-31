@@ -1,0 +1,11 @@
+# Opt-in A2A v1.0 subagent provider. Review the remote Agent Card and data
+# destination before setting the endpoint; this overlay sends no header by default.
+- insert:
+    - id: subagent-a2a
+      name: '@deepseek-ai/dsh-subagent-a2a'
+      config:
+        providerName: a2a
+        agentUrl: !!js process.env.DSH_A2A_AGENT_URL
+        agentCardPath: '/.well-known/agent-card.json'
+        allowedOrigins: []
+        headers: {}

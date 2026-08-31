@@ -186,6 +186,14 @@ const homeAndGuide = pairedPages([
     section: { root: '集成', en: 'Integrations' },
     order: 4,
   },
+  {
+    source: 'docs/user/guide/a2a-delegation.md',
+    route: 'guide/a2a-delegation.md',
+    label: { root: 'A2A 委派', en: 'A2A delegation' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '集成', en: 'Integrations' },
+    order: 5,
+  },
 ])
 
 const develop = pairedPages([

@@ -29,6 +29,7 @@ subagent 组是委派能力家族：它让 agent（智能体）把任务交给�
 | [`subagent-spawn-in-process/`](subagent-spawn-in-process/README.zh.md) | 运行全新的进程内子 agent | 注册到 `ctx.subagents` |
 | [`subagent-fork-in-process/`](subagent-fork-in-process/README.zh.md) | 运行从父级已完成历史派生的进程内子 agent | 注册到 `ctx.subagents` |
 | [`subagent-acp/`](subagent-acp/README.zh.md) | 经 Agent Client Protocol 运行进程外子 agent | 注册到 `ctx.subagents` |
+| [`subagent-a2a/`](subagent-a2a/README.zh.md) | 向远程 A2A agent 委派一次性任务 | 注册到 `ctx.subagents` |
 | [`subagent-codex/`](subagent-codex/README.zh.md) | 经官方 app-server 协议运行真实 Codex 子 agent | 注册到 `ctx.subagents` |
 | [`subagent-claude-code/`](subagent-claude-code/README.zh.md) | 经官方 Agent SDK 运行真实 Claude Code 子 agent | 注册到 `ctx.subagents` |
 | [`subagent-dsh-sdk/`](subagent-dsh-sdk/README.zh.md) | 经 TypeScript SDK 运行进程外 Harness 子 agent | 注册到 `ctx.subagents` |

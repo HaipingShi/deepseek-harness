@@ -48,7 +48,7 @@ profile 目录包含一个 `package.json`，其中记录树外插件依赖，以
 
 ## 可选 Overlay
 
-`config/examples/` 交付 GitHub 评审 webhook、会话内 Schedule、记忆 MCP 服务与运行时 Cordis 工具的可选 overlay。它们绝不属于默认 profile；安装与安全说明由[用户指南](../../docs/user/guide/index.zh.md)和[开发实战指南](../../docs/user/develop/practice/index.zh.md)负责。
+`config/examples/` 交付 GitHub 评审 webhook、会话内 Schedule、MCP 服务、远程 A2A 委派与运行时 Cordis 工具的可选 overlay。它们绝不属于默认 profile；安装与安全说明由[用户指南](../../docs/user/guide/index.zh.md)和[开发实战指南](../../docs/user/develop/practice/index.zh.md)负责。
 
 ## 开发
 

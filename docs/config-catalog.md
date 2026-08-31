@@ -2318,6 +2318,30 @@ export type JournalMode = 'wal' | 'delete' | 'truncate' | 'persist'
 
 Source: [`packages/storage/storage-sqlite/src/index.ts:24`](../packages/storage/storage-sqlite/src/index.ts)
 
+<a id="deepseek-aidsh-subagent-a2a"></a>
+
+## `@deepseek-ai/dsh-subagent-a2a`
+
+Requires: `subagents`
+
+```ts config-catalog
+/** Connection settings for one remote A2A agent. */
+export interface Config {
+  /** Provider name on `ctx.subagents` (default `a2a`). */
+  providerName: string
+  /** Absolute HTTP(S) base URL used to discover the remote Agent Card. */
+  agentUrl: string
+  /** Agent Card path relative to `agentUrl` (default `/.well-known/agent-card.json`). */
+  agentCardPath: string
+  /** Additional absolute origins allowed for Agent Card-declared interfaces. */
+  allowedOrigins: string[]
+  /** Explicit HTTP headers sent to Agent Card and message endpoints. */
+  headers: Record<string, string>
+}
+```
+
+Source: [`packages/subagent/subagent-a2a/src/index.ts:41`](../packages/subagent/subagent-a2a/src/index.ts)
+
 <a id="deepseek-aidsh-subagent-acp"></a>
 
 ## `@deepseek-ai/dsh-subagent-acp`
