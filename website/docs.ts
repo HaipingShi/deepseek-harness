@@ -178,6 +178,14 @@ const homeAndGuide = pairedPages([
     section: { root: '集成', en: 'Integrations' },
     order: 3,
   },
+  {
+    source: 'docs/user/guide/external-evaluation.md',
+    route: 'guide/external-evaluation.md',
+    label: { root: '外部评测', en: 'External evaluation' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '集成', en: 'Integrations' },
+    order: 4,
+  },
 ])
 
 const develop = pairedPages([

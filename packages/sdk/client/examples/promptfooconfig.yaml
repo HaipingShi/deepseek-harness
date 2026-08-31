@@ -1,0 +1,22 @@
+# Promptfoo 0.122.2 example. Install the pinned CLI separately and set
+# DSH_EVAL_HOME plus the model credential required by the selected profile.
+description: DSH SDK smoke evaluation
+
+prompts:
+  - '{{task}}'
+
+providers:
+  - id: file://promptfoo-provider.mjs
+    label: dsh-sdk
+    config:
+      profile: sdk-minimal
+      provider: deepseek-official
+      model: deepseek-v4-flash
+      maxTokens: 1024
+
+tests:
+  - vars:
+      task: Reply with exactly OK.
+    assert:
+      - type: equals
+        value: OK
