@@ -23,10 +23,13 @@ interface InsertedRow {
 
 const root = resolve(import.meta.dirname, '../../..')
 const toolHiveOverlay = resolve(root, 'apps/cli/config/examples/mcp-runtime/toolhive.cordis.yml')
+const playwrightOverlay = resolve(root, 'apps/cli/config/examples/mcp-browser/playwright.cordis.yml')
 const baseConfig = resolve(import.meta.dirname, 'fixtures/community-mcp-base.cordis.yml')
+const fixtureServer = resolve(root, 'packages/mcp/mcp-client/tests/fixture-server.ts')
 const liveContexts = new Set<Context>()
 const fixtures = new Set<HttpMcpFixture>()
 const originalToolHiveUrl = process.env.DSH_TOOLHIVE_MCP_URL
+const originalPlaywrightAllowedOrigins = process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS
 
 afterEach(async () => {
   await Promise.all([...liveContexts].map(async ctx => ctx.fiber.dispose()))
@@ -35,6 +38,8 @@ afterEach(async () => {
   fixtures.clear()
   if (originalToolHiveUrl === undefined) delete process.env.DSH_TOOLHIVE_MCP_URL
   else process.env.DSH_TOOLHIVE_MCP_URL = originalToolHiveUrl
+  if (originalPlaywrightAllowedOrigins === undefined) delete process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS
+  else process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS = originalPlaywrightAllowedOrigins
 })
 
 function insertedRow(patches: PatchOptions[]): InsertedRow {
@@ -52,9 +57,17 @@ async function waitForTool(ctx: Context, name: string): Promise<void> {
   }
 }
 
-async function bootOverlay(file: string): Promise<Context> {
+async function bootOverlay(file: string, override?: Record<string, unknown>): Promise<Context> {
   const patches = loadOverlayPatches('community-mcp-config-test', file)
-  insertedRow(patches).name = 'cordis:community-mcp-test-client'
+  const row = insertedRow(patches)
+  row.name = 'cordis:community-mcp-test-client'
+  if (override) {
+    if (!row.id) throw new Error(`overlay ${file} inserted a row without an id`)
+    patches.push({
+      id: row.id,
+      config: override,
+    })
+  }
   const ctx = await boot(
     'community-mcp-config-test',
     baseConfig,
@@ -100,5 +113,54 @@ describe('ToolHive MCP example overlay', () => {
 
     const ctx = await bootOverlay(toolHiveOverlay)
     await waitForTool(ctx, 'mcp__toolhive__ping')
+  }, 15_000)
+})
+
+describe('Playwright MCP browser example overlay', () => {
+  it('pins an isolated browser process with an explicit origin allowlist', () => {
+    process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS = 'https://example.com'
+    const source = readFileSync(playwrightOverlay, 'utf8')
+    const row = insertedRow(loadOverlayPatches('community-mcp-config-test', playwrightOverlay))
+
+    expect(source.split('\n', 1)[0]).toContain('@playwright/mcp 0.0.79')
+    expect(row.id).toBe('mcp-playwright')
+    expect(row.name).toBe('@deepseek-ai/dsh-mcp-client')
+    expect(row.config).toMatchObject({
+      serverName: 'playwright',
+      transport: 'stdio',
+      command: 'playwright-mcp',
+      env: {},
+      failOnStartupError: true,
+    })
+    expect(row.config?.args).toEqual([
+      '--headless',
+      '--isolated',
+      '--sandbox',
+      '--block-service-workers',
+      '--allowed-origins',
+      { __jsExpr: 'process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS' },
+    ])
+    expect(source).toContain('- !!js process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS')
+    expect(source).not.toMatch(/--(?:extension|no-sandbox|storage-state|user-data-dir)/)
+    expect(source).not.toMatch(/(?:api[_-]?key|password|secret|bearer)\s*[:=]\s*[^\s$]/i)
+  })
+
+  it('rejects an unset browser origin allowlist before starting Playwright', async () => {
+    delete process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS
+    await expect(bootOverlay(playwrightOverlay)).rejects.toThrow()
+  })
+
+  it('loads through the real Loader and discovers a keyless stdio fixture tool', async () => {
+    process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS = 'https://example.com'
+    const ctx = await bootOverlay(playwrightOverlay, {
+      serverName: 'playwright',
+      transport: 'stdio',
+      command: process.execPath,
+      args: [fixtureServer],
+      cwd: root,
+      env: {},
+      toolCallTimeoutMs: 5_000,
+    })
+    await waitForTool(ctx, 'mcp__playwright__greet')
   }, 15_000)
 })

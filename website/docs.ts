@@ -170,6 +170,14 @@ const homeAndGuide = pairedPages([
     section: { root: '集成', en: 'Integrations' },
     order: 2,
   },
+  {
+    source: 'docs/user/guide/mcp-browser.md',
+    route: 'guide/mcp-browser.md',
+    label: { root: 'Playwright MCP 浏览器', en: 'Playwright MCP browser' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '集成', en: 'Integrations' },
+    order: 3,
+  },
 ])
 
 const develop = pairedPages([

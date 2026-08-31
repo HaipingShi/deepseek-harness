@@ -1,0 +1,19 @@
+# Opt-in reference for @playwright/mcp 0.0.79. Install the pinned
+# `playwright-mcp` executable first; DSH never runs a package manager here.
+- insert:
+    - id: mcp-playwright
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: playwright
+        transport: stdio
+        command: playwright-mcp
+        args:
+          - --headless
+          - --isolated
+          - --sandbox
+          - --block-service-workers
+          - --allowed-origins
+          - !!js process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS
+        cwd: !!js process.cwd()
+        env: {}
+        failOnStartupError: true
