@@ -72,12 +72,28 @@ Engram 负责存储和项目选择：它默认使用 `~/.engram`，从 DSH 工�
 git clone --branch mcp-v1.0.2 --depth 1 https://github.com/getzep/graphiti.git graphiti-mcp-v1.0.2
 test "$(git -C graphiti-mcp-v1.0.2 rev-parse HEAD)" = 19e44a97a929ebf121294f97f26966f0379d8e30
 docker build \
+  --build-context graphiti-zai-compat="$PWD/apps/cli/config/examples/mcp-memory/graphiti-zai" \
   --file "$PWD/apps/cli/config/examples/mcp-memory/graphiti.Dockerfile" \
   --tag dsh-graphiti-mcp:mcp-v1.0.2-compat \
   graphiti-mcp-v1.0.2/mcp_server
 ```
 
-兼容 Dockerfile 固定 Python 与 uv 基础镜像 digest、Graphiti Core 0.28.2、`httpx` 0.28.1 和 MCP 1.26.0。它是针对该源码 commit 的已审阅规避方案，不是 DSH 维护的 Graphiti 发行版；任何版本发生变化时都应重新审阅并构建。由运维方单独监管该镜像及一个固定版本的数据库，只把 MCP 监听器绑定到回环地址，再让 DSH 指向完整的 `/mcp/` 端点：
+兼容 Dockerfile 固定 Python 与 uv 基础镜像 digest、Graphiti Core 0.28.2、`httpx` 0.28.1 和 MCP 1.26.0。命名构建上下文会安装显式的 `zai` LLM provider；该 provider 使用 Z.AI 文档定义的 `json_object` 模式并关闭 thinking，按 Graphiti 请求的 Pydantic 模型验证每个结果，对无效结果最多发起一次修复调用，并在修复失败时不记录 provider 输出而直接报错。构建过程运行适配器的无密钥测试，并在精确的 Graphiti 源码锚点发生漂移时失败。
+
+在 Graphiti YAML 中配置该 provider；以下三个值都必须引用环境变量，API URL 必须是 `https://api.z.ai/api/paas/v4` 或 `https://api.z.ai/api/coding/paas/v4`：
+
+```yaml
+llm:
+  provider: zai
+  model: ${ZAI_MODEL}
+  max_tokens: 4096
+  providers:
+    zai:
+      api_key: ${ZAI_API_KEY}
+      api_url: ${ZAI_API_URL}
+```
+
+适配器支持两个有文档记录的 Z.AI 端点，但不判断订阅资格。[Coding Plan 仅限受支持的工具和产品](https://docs.z.ai/devpack/quick-start)；除非运维方已经确认部署符合使用范围，否则请使用通用 API 端点。该镜像仍是针对固定源码 commit 的已审阅规避方案，不是 DSH 维护的 Graphiti 发行版；任何版本发生变化时都应重新审阅并构建。由运维方单独监管该镜像及一个固定版本的数据库，只把 MCP 监听器绑定到回环地址，再让 DSH 指向完整的 `/mcp/` 端点：
 
 ```sh
 export DSH_GRAPHITI_MCP_URL='http://127.0.0.1:8000/mcp/'

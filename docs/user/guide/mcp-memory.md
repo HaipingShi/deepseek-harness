@@ -72,12 +72,28 @@ The reviewed tag's Dockerfiles are not reproducible as published: the combined i
 git clone --branch mcp-v1.0.2 --depth 1 https://github.com/getzep/graphiti.git graphiti-mcp-v1.0.2
 test "$(git -C graphiti-mcp-v1.0.2 rev-parse HEAD)" = 19e44a97a929ebf121294f97f26966f0379d8e30
 docker build \
+  --build-context graphiti-zai-compat="$PWD/apps/cli/config/examples/mcp-memory/graphiti-zai" \
   --file "$PWD/apps/cli/config/examples/mcp-memory/graphiti.Dockerfile" \
   --tag dsh-graphiti-mcp:mcp-v1.0.2-compat \
   graphiti-mcp-v1.0.2/mcp_server
 ```
 
-The compatibility Dockerfile pins its Python and uv base image digests, Graphiti Core 0.28.2, `httpx` 0.28.1, and MCP 1.26.0. It is a reviewed workaround for this source commit, not a DSH-owned Graphiti distribution; review and rebuild it when any pin changes. Run that image and a separately pinned database under operator supervision, bind only the MCP listener to loopback, then point DSH at the full `/mcp/` endpoint:
+The compatibility Dockerfile pins its Python and uv base image digests, Graphiti Core 0.28.2, `httpx` 0.28.1, and MCP 1.26.0. The named build context installs an explicit `zai` LLM provider that uses Z.AI's documented `json_object` mode with thinking disabled, validates every result against Graphiti's requested Pydantic model, makes at most one repair call for an invalid result, and raises an error without logging provider output when repair fails. The build runs the adapter's keyless tests and fails when its exact Graphiti source anchors drift.
+
+Configure the provider in Graphiti's YAML; all three values are required environment references, and the API URL must be `https://api.z.ai/api/paas/v4` or `https://api.z.ai/api/coding/paas/v4`:
+
+```yaml
+llm:
+  provider: zai
+  model: ${ZAI_MODEL}
+  max_tokens: 4096
+  providers:
+    zai:
+      api_key: ${ZAI_API_KEY}
+      api_url: ${ZAI_API_URL}
+```
+
+The adapter supports both documented Z.AI endpoints but does not determine subscription eligibility. The [Coding Plan is restricted to supported tools and products](https://docs.z.ai/devpack/quick-start); use the general API endpoint unless the operator has confirmed that the deployment is eligible. This image remains a reviewed workaround for the pinned source commit, not a DSH-owned Graphiti distribution; review and rebuild it when any pin changes. Run it and a separately pinned database under operator supervision, bind only the MCP listener to loopback, then point DSH at the full `/mcp/` endpoint:
 
 ```sh
 export DSH_GRAPHITI_MCP_URL='http://127.0.0.1:8000/mcp/'

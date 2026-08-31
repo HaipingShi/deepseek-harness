@@ -97,6 +97,11 @@ async function waitForTool(ctx: Context, name: string): Promise<void> {
 describe('third-party memory MCP example overlays', () => {
   it('pins the reviewed Graphiti compatibility image inputs', () => {
     const source = readFileSync(resolve(exampleDir, 'graphiti.Dockerfile'), 'utf8')
+    const adapter = readFileSync(
+      resolve(exampleDir, 'graphiti-zai/zai_graphiti_client.py'),
+      'utf8',
+    )
+    const installer = readFileSync(resolve(exampleDir, 'graphiti-zai/install.py'), 'utf8')
 
     expect(source).toContain('19e44a97a929ebf121294f97f26966f0379d8e30')
     expect(source).toContain('graphiti-core==0.28.2')
@@ -108,6 +113,13 @@ describe('third-party memory MCP example overlays', () => {
     expect(baseImages).toHaveLength(2)
     expect(baseImages?.every(line => line.includes('@sha256:'))).toBe(true)
     expect(source).not.toMatch(/FROM\s+\S+:latest(?:\s|$)/)
+    expect(source).toContain('COPY --from=graphiti-zai-compat')
+    expect(source).toContain("python -m unittest discover -v -s /tmp/graphiti-zai -p 'test_*.py'")
+    expect(adapter).toContain('class ZaiGraphitiClient(LLMClient):')
+    expect(adapter).toContain('"response_format": {"type": "json_object"}')
+    expect(adapter).toContain('"extra_body": {"thinking": {"type": "disabled"}}')
+    expect(installer).toContain("case 'zai':")
+    expect(`${adapter}\n${installer}`).not.toMatch(/\bsk-[A-Za-z0-9_-]{8,}\b/)
   })
 
   it.each(examples)('parses $file with the documented generic plugin fields', (contract) => {

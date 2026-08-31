@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.9
 
 # Build with the mcp_server directory from Graphiti commit
-# 19e44a97a929ebf121294f97f26966f0379d8e30 as the context.
+# 19e44a97a929ebf121294f97f26966f0379d8e30 as the context and the adjacent
+# graphiti-zai directory as the graphiti-zai-compat named context.
 FROM ghcr.io/astral-sh/uv:0.8.22@sha256:9874eb7afe5ca16c363fe80b294fe700e460df29a55532bbfea234a0f12eddb1 AS uv
 FROM python:3.11-slim-bookworm@sha256:0bee7276f83efd4a1ee05bbbf4281d95ed28e079220a9457f25a93e3f1e3c31b
 
@@ -33,6 +34,14 @@ RUN printf '%s\n' \
 COPY main.py ./
 COPY src/ ./src/
 COPY config/ ./config/
+COPY --from=graphiti-zai-compat . /tmp/graphiti-zai/
+
+RUN PYTHONPATH=/tmp/graphiti-zai:/app/mcp/src \
+      python -m unittest discover -v -s /tmp/graphiti-zai -p 'test_*.py' \
+    && python /tmp/graphiti-zai/install.py /app/mcp/src \
+    && PYTHONPATH=/app/mcp/src python -c \
+      "from config.schema import GraphitiConfig; from services.factories import LLMClientFactory; config = GraphitiConfig(llm={'provider':'zai','model':'glm-smoke','providers':{'zai':{'api_key':'test-key','api_url':'https://api.z.ai/api/paas/v4'}}}); assert type(LLMClientFactory.create(config.llm)).__name__ == 'ZaiGraphitiClient'" \
+    && rm -rf /tmp/graphiti-zai
 
 RUN groupadd --system graphiti \
     && useradd --system --gid graphiti --home-dir /app/mcp graphiti \
