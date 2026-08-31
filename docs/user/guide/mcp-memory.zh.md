@@ -2,7 +2,7 @@
 
 [English](mcp-memory.md) | 中文
 
-这三份**默认关闭的参考配置**通过 [`@deepseek-ai/dsh-mcp-client`](../../../packages/mcp/mcp-client/README.zh.md) 将一个记忆系统连接到 DSH。请选择其中一份，或复制相同的通用 MCP 配置项来连接其他服务器。
+这四份**默认关闭的参考配置**通过 [`@deepseek-ai/dsh-mcp-client`](../../../packages/mcp/mcp-client/README.zh.md) 将一个记忆系统连接到 DSH。请选择其中一份，或复制相同的通用 MCP 配置项来连接其他服务器。
 
 这些第三方配置仅作为互操作参考；收录不代表 DeepSeek 的认可、推荐、合作关系或持续支持承诺。
 
@@ -19,6 +19,7 @@ stdio 桥接器在启动子进程前会主动移除环境中名称通常表示�
 | [Memorix](https://github.com/AVIDS2/memorix) | `memorix@1.3.0`（`500792cad3144142293bfbb20acb4841c9f7fcfa`） | stdio | Node 22.18+，并执行 `npm install --global memorix@1.3.0` |
 | [MCP Reference Memory](https://github.com/modelcontextprotocol/servers/tree/main/src/memory) | `@modelcontextprotocol/server-memory@2026.7.4`（`6dd0a683e198783e30feabf7abaf42f925bd18b1`） | stdio | `npm install --global @modelcontextprotocol/server-memory@2026.7.4` |
 | [Engram](https://github.com/Gentleman-Programming/engram) | `v1.20.0`（`ba9e46ced152c37a7cb9e576153c41995873e2fc`） | stdio | Go 1.25.10+，并执行 `go install github.com/Gentleman-Programming/engram/cmd/engram@v1.20.0`，或安装匹配的发布版二进制文件 |
+| [Graphiti MCP](https://github.com/getzep/graphiti/tree/mcp-v1.0.2/mcp_server) | `mcp-v1.0.2`（`19e44a97a929ebf121294f97f26966f0379d8e30`，要求 Graphiti Core 0.28.2+） | 回环地址上的 Streamable HTTP | 单独监管的 Graphiti MCP 服务、数据库，以及已配置的 LLM 和 embedding provider |
 
 ## 启用一个
 
@@ -28,7 +29,7 @@ stdio 桥接器在启动子进程前会主动移除环境中名称通常表示�
 dsh web --patch "$PWD/apps/cli/config/examples/mcp-memory/memorix.cordis.yml"
 ```
 
-请将文件名替换为 `mcp-reference-memory.cordis.yml` 或 `engram.cordis.yml`。该路径可以指向磁盘任意位置的一份复制文件。交付组合不包含任何记忆服务器，因此不传 `--patch` 就会让这三项全部保持关闭。
+请将文件名替换为 `mcp-reference-memory.cordis.yml`、`engram.cordis.yml` 或 `graphiti.cordis.yml`。该路径可以指向磁盘任意位置的一份复制文件。交付组合不包含任何记忆服务器，因此不传 `--patch` 就会让这四项全部保持关闭。
 
 如果要跨次运行保留所选配置，请将对应文件中的单个 `insert` patch 合并到用户 patch 层：只对一个 profile 生效则写入 `$DSH_HOME/profiles/<name>/cordis.patch.yml`，对本机所有 profile 生效则写入 `$DSH_HOME/cordis.patch.yml`。不要覆盖已有文件，其中可能已经包含无关的用户 patch。
 
@@ -63,6 +64,19 @@ dsh web --patch "$PWD/apps/cli/config/examples/mcp-memory/engram.cordis.yml"
 
 Engram 负责存储和项目选择：它默认使用 `~/.engram`，从 DSH 工作目录检测 Git 项目，并接受 `ENGRAM_DATA_DIR` 或 `ENGRAM_PROJECT` 作为环境覆盖项。
 
+### Graphiti
+
+单独运行已审阅的 Graphiti MCP 服务及其数据库，将 MCP 监听器绑定到回环地址，再让 DSH 指向完整的 `/mcp/` 端点：
+
+```sh
+export DSH_GRAPHITI_MCP_URL='http://127.0.0.1:8000/mcp/'
+dsh web --patch "$PWD/apps/cli/config/examples/mcp-memory/graphiti.cordis.yml"
+```
+
+覆盖层只接受 `127.0.0.1`、`localhost` 或 `::1` 上的普通 HTTP。已审阅的 Graphiti MCP release 不提供端点认证，因此网络可访问的部署需要单独审阅的认证反向代理和另一份 DSH 覆盖层，而不是放宽本参考配置。在 Graphiti 服务中配置数据库、LLM、embedding provider、API key、并发、保留和备份；DSH 不会通过 MCP 连接发送这些凭据。
+
+Graphiti 通过 provider 调用提取实体和事实，将其持久化到图数据库，并公开读取、写入、删除和维护工具。当其文档所述匿名用量上报未获授权时，在 Graphiti 服务中设置 `GRAPHITI_TELEMETRY_ENABLED=false`。为每个租户或测试域使用专用 `group_id`，但不要把 group id 当作访问控制。向 Agent 暴露完整 `mcp__graphiti__...` 命名空间前，先审阅删除和图维护工具。
+
 ## 可选的共用模型指令
 
 如果服务器的工具描述无法可靠触发记忆使用，请将以下简短、与提供方无关的指令添加到你现有的模型指令中：
@@ -73,7 +87,7 @@ Engram 负责存储和项目选择：它默认使用 `~/.engram`，从 DSH 工�
 
 ## 验证写入、新会话召回和使用
 
-请在整个过程中使用一个唯一值，并保持提供方的存储范围不变：
+请在整个过程中使用一个唯一值，并保持提供方的存储范围不变。对于 Graphiti，在召回前等待异步 episode 处理完成，并保持同一个 `group_id`：
 
 1. 在 DSH 会话 A 中提出：`Remember that my validation drink is lapsang-<unique suffix>.`。确认模型调用了提供方的写入工具，并且工具返回成功。
 2. 在同一个仍在运行的 Host 中创建 DSH 会话 B。不要复制会话 A 的对话。提出：`What is my validation drink? Check memory.`。确认模型调用了提供方的搜索或召回工具，并返回该值。

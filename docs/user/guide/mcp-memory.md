@@ -2,7 +2,7 @@
 
 English | [中文](mcp-memory.zh.md)
 
-These three **default-off reference configurations** connect one memory system to DSH through [`@deepseek-ai/dsh-mcp-client`](../../../packages/mcp/mcp-client/README.md). Pick one, or copy the same generic MCP row for another server.
+These four **default-off reference configurations** connect one memory system to DSH through [`@deepseek-ai/dsh-mcp-client`](../../../packages/mcp/mcp-client/README.md). Pick one, or copy the same generic MCP row for another server.
 
 These third-party configurations are provided as interoperability examples only. Their inclusion does not imply endorsement, recommendation, partnership, or ongoing support by DeepSeek.
 
@@ -19,6 +19,7 @@ The stdio bridge deliberately removes ambient variables whose names usually iden
 | [Memorix](https://github.com/AVIDS2/memorix) | `memorix@1.3.0` (`500792cad3144142293bfbb20acb4841c9f7fcfa`) | stdio | Node 22.18+ and `npm install --global memorix@1.3.0` |
 | [MCP Reference Memory](https://github.com/modelcontextprotocol/servers/tree/main/src/memory) | `@modelcontextprotocol/server-memory@2026.7.4` (`6dd0a683e198783e30feabf7abaf42f925bd18b1`) | stdio | `npm install --global @modelcontextprotocol/server-memory@2026.7.4` |
 | [Engram](https://github.com/Gentleman-Programming/engram) | `v1.20.0` (`ba9e46ced152c37a7cb9e576153c41995873e2fc`) | stdio | Go 1.25.10+ and `go install github.com/Gentleman-Programming/engram/cmd/engram@v1.20.0`, or the matching release binary |
+| [Graphiti MCP](https://github.com/getzep/graphiti/tree/mcp-v1.0.2/mcp_server) | `mcp-v1.0.2` (`19e44a97a929ebf121294f97f26966f0379d8e30`, requiring Graphiti Core 0.28.2+) | Streamable HTTP on loopback | A separately supervised Graphiti MCP service, database, and configured LLM and embedding providers |
 
 ## Enable one
 
@@ -28,7 +29,7 @@ Pass one overlay to DSH:
 dsh web --patch "$PWD/apps/cli/config/examples/mcp-memory/memorix.cordis.yml"
 ```
 
-Replace the filename with `mcp-reference-memory.cordis.yml` or `engram.cordis.yml`. The path may point to a copied file anywhere on disk. No memory server is present in the shipped composition, so omitting `--patch` keeps all three disabled.
+Replace the filename with `mcp-reference-memory.cordis.yml`, `engram.cordis.yml`, or `graphiti.cordis.yml`. The path may point to a copied file anywhere on disk. No memory server is present in the shipped composition, so omitting `--patch` keeps all four disabled.
 
 To keep the selection across runs, merge the chosen file's single `insert` patch into a user patch layer — `$DSH_HOME/profiles/<name>/cordis.patch.yml` for one profile, or `$DSH_HOME/cordis.patch.yml` for every profile on the machine. Do not copy over an existing file: it may already contain unrelated user patches.
 
@@ -63,6 +64,19 @@ dsh web --patch "$PWD/apps/cli/config/examples/mcp-memory/engram.cordis.yml"
 
 Engram owns storage and project selection: it uses `~/.engram` by default, detects the Git project from the DSH working directory, and accepts `ENGRAM_DATA_DIR` or `ENGRAM_PROJECT` as ambient overrides.
 
+### Graphiti
+
+Run the reviewed Graphiti MCP service and its database separately, bind its MCP listener to loopback, then point DSH at the full `/mcp/` endpoint:
+
+```sh
+export DSH_GRAPHITI_MCP_URL='http://127.0.0.1:8000/mcp/'
+dsh web --patch "$PWD/apps/cli/config/examples/mcp-memory/graphiti.cordis.yml"
+```
+
+The overlay accepts only plain HTTP on `127.0.0.1`, `localhost`, or `::1`. The reviewed Graphiti MCP release does not provide endpoint authentication, so a network-accessible deployment needs a separately reviewed authenticated reverse proxy and a different DSH overlay rather than weakening this reference. Configure the database, LLM, embedding provider, API keys, concurrency, retention, and backups in the Graphiti service; DSH sends none of those credentials over the MCP connection.
+
+Graphiti extracts entities and facts through provider calls, persists them in a graph database, and exposes read, write, delete, and maintenance tools. Set `GRAPHITI_TELEMETRY_ENABLED=false` in the Graphiti service when its documented anonymous usage reporting is not authorized. Use a dedicated `group_id` per tenant or test domain, but do not treat a group id as access control. Review deletion and graph-maintenance tools before exposing the complete `mcp__graphiti__...` namespace to an agent.
+
 ## Optional shared model instruction
 
 Add this short, vendor-neutral instruction to your existing model instructions if the server's tool descriptions do not trigger memory use reliably:
@@ -73,7 +87,7 @@ This is additive guidance only. The examples do not replace DSH's system-prompt 
 
 ## Verify write, fresh-session recall, and use
 
-Use one unique value and keep the provider's storage scope unchanged throughout:
+Use one unique value and keep the provider's storage scope unchanged throughout. For Graphiti, wait for asynchronous episode processing before recall and keep the same `group_id`:
 
 1. In DSH session A, ask: `Remember that my validation drink is lapsang-<unique suffix>.` Confirm the model called the provider's write tool and the tool returned success.
 2. Create DSH session B in the same running Host. Do not copy session A's conversation. Ask: `What is my validation drink? Check memory.` Confirm the model called the provider's search or recall tool and returned the value.

@@ -14,6 +14,7 @@ import { boot, loadOverlayPatches } from '@deepseek-ai/dsh-app-boot'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
 import * as McpClient from '@deepseek-ai/dsh-mcp-client/src/index.ts'
+import { startHttpMcpFixture, type HttpMcpFixture } from '../../../packages/mcp/mcp-client/tests/http-fixture.ts'
 
 interface ExampleContract {
   file: string
@@ -56,13 +57,26 @@ const examples: ExampleContract[] = [
     transport: 'stdio',
     pin: '1.20.0',
   },
+  {
+    file: 'graphiti.cordis.yml',
+    id: 'memory-graphiti',
+    serverName: 'graphiti',
+    transport: 'streamable-http',
+    pin: 'mcp-v1.0.2',
+  },
 ]
 
 const liveContexts = new Set<Context>()
+const fixtures = new Set<HttpMcpFixture>()
+const originalGraphitiUrl = process.env.DSH_GRAPHITI_MCP_URL
 
 afterEach(async () => {
   await Promise.all([...liveContexts].map(async ctx => ctx.fiber.dispose()))
+  await Promise.all([...fixtures].map(async fixture => fixture.close()))
   liveContexts.clear()
+  fixtures.clear()
+  if (originalGraphitiUrl === undefined) delete process.env.DSH_GRAPHITI_MCP_URL
+  else process.env.DSH_GRAPHITI_MCP_URL = originalGraphitiUrl
 })
 
 function insertedRow(patches: PatchOptions[]): InsertedRow {
@@ -82,6 +96,7 @@ async function waitForTool(ctx: Context, name: string): Promise<void> {
 
 describe('third-party memory MCP example overlays', () => {
   it.each(examples)('parses $file with the documented generic plugin fields', (contract) => {
+    if (contract.serverName === 'graphiti') process.env.DSH_GRAPHITI_MCP_URL = 'http://127.0.0.1:43123/mcp/'
     const file = resolve(exampleDir, contract.file)
     const source = readFileSync(file, 'utf8')
     const row = insertedRow(loadOverlayPatches('memory-mcp-config-test', file))
@@ -96,6 +111,7 @@ describe('third-party memory MCP example overlays', () => {
   })
 
   it.each(examples)('loads $file and discovers a keyless fixture tool', async (contract) => {
+    if (contract.serverName === 'graphiti') process.env.DSH_GRAPHITI_MCP_URL = 'http://127.0.0.1:43123/mcp/'
     const patches = loadOverlayPatches(
       'memory-mcp-config-test',
       resolve(exampleDir, contract.file),
@@ -128,5 +144,50 @@ describe('third-party memory MCP example overlays', () => {
       },
     )
     await waitForTool(ctx, `mcp__${contract.serverName}__greet`)
+  }, 15_000)
+
+  it('rejects an absent or non-loopback Graphiti endpoint before connecting', async () => {
+    const file = resolve(exampleDir, 'graphiti.cordis.yml')
+    const rejectBoot = async (): Promise<void> => {
+      const patches = loadOverlayPatches('memory-mcp-config-test', file)
+      insertedRow(patches).name = 'cordis:memory-test-mcp-client'
+      await boot(
+        'memory-mcp-config-test',
+        baseConfig,
+        patches,
+        (ctx) => {
+          ctx.loader.builtins['memory-test-system-prompt'] = SystemPrompt
+          ctx.loader.builtins['memory-test-tools'] = ToolRuntime
+          ctx.loader.builtins['memory-test-mcp-client'] = McpClient
+        },
+      )
+    }
+
+    delete process.env.DSH_GRAPHITI_MCP_URL
+    await expect(rejectBoot()).rejects.toThrow('DSH_GRAPHITI_MCP_URL is required')
+
+    process.env.DSH_GRAPHITI_MCP_URL = 'https://memory.example.com/mcp/'
+    await expect(rejectBoot()).rejects.toThrow('must use HTTP on a loopback host')
+  })
+
+  it('connects the checked-in Graphiti HTTP transport to a keyless fixture', async () => {
+    const fixture = await startHttpMcpFixture()
+    fixtures.add(fixture)
+    process.env.DSH_GRAPHITI_MCP_URL = fixture.url
+    const file = resolve(exampleDir, 'graphiti.cordis.yml')
+    const patches = loadOverlayPatches('memory-mcp-config-test', file)
+    insertedRow(patches).name = 'cordis:memory-test-mcp-client'
+    const ctx = await boot(
+      'memory-mcp-config-test',
+      baseConfig,
+      patches,
+      (ctx) => {
+        liveContexts.add(ctx)
+        ctx.loader.builtins['memory-test-system-prompt'] = SystemPrompt
+        ctx.loader.builtins['memory-test-tools'] = ToolRuntime
+        ctx.loader.builtins['memory-test-mcp-client'] = McpClient
+      },
+    )
+    await waitForTool(ctx, 'mcp__graphiti__ping')
   }, 15_000)
 })

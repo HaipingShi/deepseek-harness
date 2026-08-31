@@ -1,0 +1,12 @@
+# Opt-in reference for Graphiti MCP mcp-v1.0.2 at commit 19e44a97a929ebf121294f97f26966f0379d8e30.
+# Run the reviewed service separately; this client accepts only a loopback HTTP endpoint.
+- insert:
+    - id: memory-graphiti
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: graphiti
+        transport: streamable-http
+        url: !!js >-
+          (() => { const raw = process.env.DSH_GRAPHITI_MCP_URL; if (!raw) throw new Error('DSH_GRAPHITI_MCP_URL is required'); const parsed = new (process.getBuiltinModule('node:url').URL)(raw); if (parsed.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(parsed.hostname)) throw new Error('DSH_GRAPHITI_MCP_URL must use HTTP on a loopback host'); return parsed.href })()
+        headers: {}
+        failOnStartupError: true
