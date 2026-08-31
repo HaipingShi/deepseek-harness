@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/user/guide/temporal-orchestration.md
+temporal-orchestration.md: cfb4f9184fc5526d81e1c30bdf65aeb81f06c27f
+temporal-orchestration.zh.md: 351187e185c18048bf7d78b3486ed65983b5d3e5

@@ -202,6 +202,14 @@ const homeAndGuide = pairedPages([
     section: { root: '集成', en: 'Integrations' },
     order: 6,
   },
+  {
+    source: 'docs/user/guide/temporal-orchestration.md',
+    route: 'guide/temporal-orchestration.md',
+    label: { root: 'Temporal 持久编排', en: 'Temporal orchestration' },
+    sidebar: { root: 'zh-guide', en: 'en-guide' },
+    section: { root: '集成', en: 'Integrations' },
+    order: 7,
+  },
 ])
 
 const develop = pairedPages([
