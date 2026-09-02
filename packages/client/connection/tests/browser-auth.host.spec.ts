@@ -140,6 +140,63 @@ describe('BrowserAuth', () => {
     })
   })
 
+  it('exchanges short-lived handoffs once, binds authority, expires, and invalidates them', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-09-02T00:00:00.000Z'))
+    const auth = await createAuth(new RecordCredentials())
+    const first = auth.issueBrowserHandoff('http://127.0.0.1:3080', 30_000)
+    const second = auth.issueBrowserHandoff('http://127.0.0.1:3080', 30_000)
+    expect(first).not.toBe(second)
+
+    const target = new URL(first)
+    const exchanged = response()
+    expect(auth.authorizeIndex(request(`${target.pathname}${target.search}`), exchanged.value)).toBe(false)
+    expect(exchanged.state).toMatchObject({
+      status: 303,
+      headers: { location: '/', 'referrer-policy': 'no-referrer' },
+    })
+    expect(exchanged.state.headers?.['set-cookie']).toMatch(/; HttpOnly; SameSite=Lax$/u)
+    const cookie = exchanged.state.headers?.['set-cookie']?.split(';', 1)[0]
+    if (cookie === undefined) throw new Error('handoff exchange did not set a cookie')
+    expect(auth.authorizeIndex(request('/', '127.0.0.1:3080', { cookie }), response().value)).toBe(true)
+    const replayed = response()
+    expect(auth.authorizeIndex(request(`${target.pathname}${target.search}`), replayed.value)).toBe(false)
+    expect(replayed.state.status).toBe(401)
+
+    const wrongAuthority = new URL(second)
+    const wrong = response()
+    expect(auth.authorizeIndex(request(
+      `${wrongAuthority.pathname}${wrongAuthority.search}`,
+      'localhost:3080',
+    ), wrong.value)).toBe(false)
+    expect(wrong.state.status).toBe(401)
+    const correct = response()
+    expect(auth.authorizeIndex(request(
+      `${wrongAuthority.pathname}${wrongAuthority.search}`,
+      '127.0.0.1:3080',
+    ), correct.value)).toBe(false)
+    expect(correct.state.status).toBe(303)
+
+    const expiring = new URL(auth.issueBrowserHandoff('http://127.0.0.1:3080', 1_000))
+    vi.advanceTimersByTime(1_000)
+    const expired = response()
+    expect(auth.authorizeIndex(request(`${expiring.pathname}${expiring.search}`), expired.value)).toBe(false)
+    expect(expired.state.status).toBe(401)
+
+    const invalidated = new URL(auth.issueBrowserHandoff('http://127.0.0.1:3080', 30_000))
+    auth.invalidateBrowserHandoffs()
+    const denied = response()
+    expect(auth.authorizeIndex(request(`${invalidated.pathname}${invalidated.search}`), denied.value)).toBe(false)
+    expect(denied.state.status).toBe(401)
+  })
+
+  it('rejects invalid browser handoff lifetimes', async () => {
+    const auth = await createAuth(new RecordCredentials())
+    for (const ttl of [0, -1, 120_001, 1.5, Number.MAX_SAFE_INTEGER]) {
+      expect(() => auth.issueBrowserHandoff('http://127.0.0.1:3080', ttl)).toThrow(/handoff lifetime/u)
+    }
+  })
+
   it('accepts the cookie for index serving and gives every unauthenticated request one response', async () => {
     const auth = await createAuth(new RecordCredentials())
     const { cookie } = exchange(auth)

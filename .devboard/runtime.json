@@ -1,0 +1,25 @@
+{
+  "protocol": "devboard.runtime/v1",
+  "id": "dsh-web",
+  "execution": {
+    "mode": "shell",
+    "command": "pnpm dsh web --no-open --port {{port}}",
+    "env": {
+      "PORT": "{{port}}"
+    }
+  },
+  "endpoint": {
+    "id": "main",
+    "protocol": "http",
+    "host": "127.0.0.1",
+    "port": "{{port}}"
+  },
+  "readiness": {
+    "type": "tcp"
+  },
+  "control": {
+    "protocol": "devboard.runtime-control/v1",
+    "transport": "websocket",
+    "openMode": "session-handoff"
+  }
+}

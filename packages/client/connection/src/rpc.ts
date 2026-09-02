@@ -192,6 +192,17 @@ export interface HostConnectionHandle {
    * @returns root URL accepted by {@link authorizeIndex} for initial login.
    */
   authenticatedUrl(baseUrl: string): string
+
+  /**
+   * Mint one short-lived, single-use browser authentication URL.
+   * @param baseUrl - clean canonical browser origin.
+   * @param ttlMilliseconds - capability lifetime in milliseconds.
+   * @returns root URL accepted once by {@link authorizeIndex} before expiry.
+   */
+  issueBrowserHandoff(baseUrl: string, ttlMilliseconds: number): string
+
+  /** Invalidate every outstanding browser handoff URL. */
+  invalidateBrowserHandoffs(): void
 }
 
 /** Transport-independent Fetch handler used by HTTP and worker carriers. */
