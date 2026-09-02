@@ -108,6 +108,16 @@ export class HostConnectionService extends Service implements HostConnectionHand
     return this.browserAuth.authenticatedUrl(baseUrl)
   }
 
+  /** Mint one short-lived, single-use browser handoff URL. */
+  issueBrowserHandoff(baseUrl: string, ttlMilliseconds: number): string {
+    return this.browserAuth.issueBrowserHandoff(baseUrl, ttlMilliseconds)
+  }
+
+  /** Invalidate every outstanding browser handoff URL. */
+  invalidateBrowserHandoffs(): void {
+    this.browserAuth.invalidateBrowserHandoffs()
+  }
+
   /**
    * Compose one shared-channel Fetch handler from exact routes and its interceptor.
    * @param channel - shared channel mounted by Connection.

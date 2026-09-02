@@ -15,8 +15,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import { createLaunchEnvironmentSnapshot, DSH_LAUNCH_ENVIRONMENT_KEY } from '@deepseek-ai/dsh-launch-environment'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
+import type { HostConnectionHandle } from '@deepseek-ai/dsh-client-connection'
 import type { WebServer } from '@deepseek-ai/dsh-host-webserver'
 import { apply, Config, internals } from '../src/index.ts'
+import type { DevBoardRuntimeControl, RuntimeControlOptions } from '../src/runtime-control.ts'
 
 vi.mock('node:child_process', async importOriginal => ({
   ...await importOriginal<typeof import('node:child_process')>(),
@@ -44,12 +46,14 @@ afterEach(() => {
   vi.unstubAllEnvs()
   internals.resolveDistIndex = originalResolve
   internals.openBrowser = originalOpenBrowser
+  internals.createRuntimeControl = originalCreateRuntimeControl
   if (dist !== undefined) rmSync(dist, { recursive: true, force: true })
   dist = undefined
 })
 
 const originalResolve = internals.resolveDistIndex
 const originalOpenBrowser = internals.openBrowser
+const originalCreateRuntimeControl = internals.createRuntimeControl
 
 type BrowserLauncher = ChildProcess & { stderr: PassThrough }
 
@@ -84,8 +88,11 @@ function fakeHttpServer(host: '127.0.0.1' | '0.0.0.0' = '127.0.0.1'): { server: 
 }
 
 /** Deterministic Host Connection face for URL publication and frontend injection. */
-function provideConnection(ctx: Context): void {
-  ctx.provide('connection', {
+function provideConnection(ctx: Context, overrides?: {
+  issueBrowserHandoff?: () => string
+  invalidateBrowserHandoffs?: () => void
+}): HostConnectionHandle {
+  const connection = {
     authenticatedUrl(baseUrl: string) {
       const url = new URL(baseUrl)
       url.pathname = '/'
@@ -94,8 +101,13 @@ function provideConnection(ctx: Context): void {
     },
     authorizeIndex: () => true,
     requestRejection: () => undefined,
+    issueBrowserHandoff: overrides?.issueBrowserHandoff
+      ?? vi.fn(() => 'http://127.0.0.1:4567/?token=' + 'h'.repeat(43)),
+    invalidateBrowserHandoffs: overrides?.invalidateBrowserHandoffs ?? vi.fn(() => {}),
     rpc: {},
-  } as never)
+  } as unknown as HostConnectionHandle
+  ctx.provide('connection', connection)
+  return connection
 }
 
 /** A fake Loader whose settlement the test controls (the URL line waits on it). */
@@ -179,6 +191,164 @@ describe('web-app runtime glue', () => {
     const assembly = await ctx.systemPrompt.assemble()
     expect(assembly.sections.find(entry => entry.name === 'app:web-surface')?.text)
       .toContain('rebuilding the affected Web artifacts')
+    await ctx.fiber.dispose()
+  })
+
+  it('lets DevBoard own opening and announces managed readiness only after Loader settlement', async () => {
+    stageDist()
+    const ctx = new Context()
+    ctx.provide('webServer', fakeHttpServer().server)
+    const invalidateBrowserHandoffs = vi.fn(() => {})
+    const connectionFiber = ctx.plugin((connectionCtx: Context) => {
+      provideConnection(connectionCtx, { invalidateBrowserHandoffs })
+    })
+    await connectionFiber
+    let release: () => void
+    provideLoader(ctx, () => new Promise<void>((resolve) => { release = resolve }))
+    const lifecycle: string[] = []
+    let phase: 'CREATED' | 'HELLO' | 'READY' | 'CLOSED' = 'CREATED'
+    const connectControl = vi.fn(async () => {
+      lifecycle.push('hello')
+      phase = 'HELLO'
+      return { protocol: 'devboard.runtime-control/v1', phase, openMode: 'session-handoff' }
+    })
+    const markReady = vi.fn(() => {
+      lifecycle.push('ready')
+      phase = 'READY'
+      return { protocol: 'devboard.runtime-control/v1', phase, openMode: 'session-handoff' }
+    })
+    const closeControl = vi.fn(async () => { phase = 'CLOSED' })
+    const control = {
+      connect: connectControl,
+      markReady,
+      close: closeControl,
+      getState: () => ({ protocol: 'devboard.runtime-control/v1', phase, openMode: 'session-handoff' }),
+    } as unknown as DevBoardRuntimeControl
+    let runtimeOptions: RuntimeControlOptions | undefined
+    internals.createRuntimeControl = vi.fn((options: RuntimeControlOptions) => {
+      runtimeOptions = options
+      return control
+    })
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const openBrowser = vi.fn(async () => {})
+    internals.openBrowser = openBrowser
+
+    apply(ctx, new Config({ openBrowser: true, printUrl: true, surfaceContext: false, trustedHosts: [] }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(connectControl).toHaveBeenCalledTimes(1)
+    expect(markReady).not.toHaveBeenCalled()
+    expect(log).not.toHaveBeenCalled()
+    expect(openBrowser).not.toHaveBeenCalled()
+    expect(runtimeOptions?.createHandoffUrl()).toBe(
+      'http://127.0.0.1:4567/?token=' + 'h'.repeat(43),
+    )
+    runtimeOptions?.invalidateHandoffs()
+    expect(invalidateBrowserHandoffs).toHaveBeenCalledTimes(1)
+
+    release!()
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(lifecycle).toEqual(['hello', 'ready'])
+    expect(log).not.toHaveBeenCalled()
+    expect(openBrowser).not.toHaveBeenCalled()
+    await connectionFiber.dispose()
+    await ctx.plugin((connectionCtx: Context) => { provideConnection(connectionCtx) })
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(connectControl).toHaveBeenCalledTimes(1)
+    await ctx.fiber.dispose()
+    expect(closeControl).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps managed handoff callbacks bound to the current Connection and requires loopback', async () => {
+    stageDist()
+    const ctx = new Context()
+    ctx.provide('webServer', fakeHttpServer().server)
+    let runtimeOptions: RuntimeControlOptions | undefined
+    internals.createRuntimeControl = vi.fn((options: RuntimeControlOptions) => {
+      runtimeOptions = options
+      return undefined
+    })
+    apply(ctx, new Config({ openBrowser: false, printUrl: false, surfaceContext: false, trustedHosts: [] }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(() => runtimeOptions?.createHandoffUrl()).toThrow('Connection unavailable')
+    runtimeOptions?.invalidateHandoffs()
+    await ctx.fiber.dispose()
+
+    const nonLoopback = new Context()
+    nonLoopback.provide('webServer', fakeHttpServer('0.0.0.0').server)
+    internals.createRuntimeControl = vi.fn(() => {
+      return {} as DevBoardRuntimeControl
+    })
+    expect(() => {
+      apply(nonLoopback, new Config({
+        openBrowser: false,
+        printUrl: false,
+        surfaceContext: false,
+        trustedHosts: [],
+      }))
+    }).toThrow('requires the loopback Web server')
+    await nonLoopback.fiber.dispose()
+  })
+
+  it('closes managed control when Loader fails or authenticated readiness disappears', async () => {
+    stageDist()
+    for (const failure of ['loader', 'connection'] as const) {
+      const ctx = new Context()
+      ctx.provide('webServer', fakeHttpServer().server)
+      const connectionFiber = ctx.plugin((connectionCtx: Context) => { provideConnection(connectionCtx) })
+      await connectionFiber
+      let release: (() => void) | undefined
+      if (failure === 'loader') {
+        provideLoader(ctx, async () => { throw new Error('boot failed') })
+      } else {
+        provideLoader(ctx, () => new Promise<void>((resolve) => { release = resolve }))
+      }
+      let phase: 'CREATED' | 'HELLO' | 'CLOSED' = 'CREATED'
+      const connectControl = vi.fn(async () => {
+        phase = 'HELLO'
+        return { protocol: 'devboard.runtime-control/v1', phase, openMode: 'session-handoff' }
+      })
+      const markReady = vi.fn()
+      const closeControl = vi.fn(async () => { phase = 'CLOSED' })
+      const control = {
+        connect: connectControl,
+        markReady,
+        close: closeControl,
+        getState: () => ({ protocol: 'devboard.runtime-control/v1', phase, openMode: 'session-handoff' }),
+      } as unknown as DevBoardRuntimeControl
+      internals.createRuntimeControl = vi.fn(() => control)
+      apply(ctx, new Config({ openBrowser: false, printUrl: false, surfaceContext: false, trustedHosts: [] }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+      if (failure === 'connection') {
+        await connectionFiber.dispose()
+        release?.()
+      }
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(closeControl).toHaveBeenCalled()
+      expect(markReady).not.toHaveBeenCalled()
+      await ctx.fiber.dispose()
+    }
+  })
+
+  it('does not announce ready from a hand-built tree after control has closed', async () => {
+    stageDist()
+    const ctx = new Context()
+    ctx.provide('webServer', fakeHttpServer().server)
+    provideConnection(ctx)
+    const markReady = vi.fn()
+    const control = {
+      connect: vi.fn(async () => ({
+        protocol: 'devboard.runtime-control/v1', phase: 'CLOSED', openMode: 'session-handoff',
+      })),
+      markReady,
+      close: vi.fn(async () => {}),
+      getState: () => ({
+        protocol: 'devboard.runtime-control/v1', phase: 'CLOSED', openMode: 'session-handoff',
+      }),
+    } as unknown as DevBoardRuntimeControl
+    internals.createRuntimeControl = vi.fn(() => control)
+    apply(ctx, new Config({ openBrowser: false, printUrl: false, surfaceContext: false, trustedHosts: [] }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(markReady).not.toHaveBeenCalled()
     await ctx.fiber.dispose()
   })
 

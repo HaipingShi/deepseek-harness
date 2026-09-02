@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-运行 `dsh --profile web`，界面会在你的默认浏览器中打开，即可与 agent（智能体）交互式聊天。你会获得会话视图、模型与设置管理以及会话历史，背后与其他表层相同的模型访问、工具与安全默认值。该命令会打印带 token 的启动 URL；浏览器用该 token 换取签名会话 cookie，再重定向到干净的根 URL。你可以从命令行更改端口、关闭浏览器交接并允许额外主机；有意不支持绑定所有网络接口。需要浏览器中的交互式工作时选择它；`dsh-headless` 是一次性的命令行兄弟表层。
+运行 `dsh --profile web`，界面会在你的默认浏览器中打开，即可与 agent（智能体）交互式聊天。你会获得会话视图、模型与设置管理以及会话历史，背后与其他表层相同的模型访问、工具与安全默认值。独立运行的命令会打印带 token 的启动 URL；浏览器用该 token 换取签名会话 cookie，再重定向到干净的根 URL。由 DevBoard 托管的命令则通过 Runtime Protocol v1 报告就绪状态与新的单次浏览器交接，并让 DevBoard 成为唯一的浏览器开启方。你可以从命令行更改端口、关闭独立运行时的浏览器交接并允许额外主机；有意不支持绑定所有网络接口。需要浏览器中的交互式工作时选择它；`dsh-headless` 是一次性的命令行兄弟表层。
 
 ## 目录
 
@@ -35,6 +35,10 @@ dsh --profile web --no-open --port 8080
 ```
 
 启动后你会看到 `dsh web:` 行，其根 URL 携带新的进程 token。除非 `--no-open` 或 SSH 会话抑制，否则默认浏览器会打开该 URL、取得签名 cookie，再重定向到干净的根页面。页面加载且你可以与 agent（智能体）对话，就说明成功了。两种可预期的失败：前端未构建时，启动会以构建提示停止（checkout 中运行 `pnpm run build`）；浏览器无法打开时，stderr 会打印不含凭据的诊断，但服务器会继续运行——请自行打开已打印的启动 URL。
+
+当 DevBoard 注入全部三个 Runtime Protocol 控制变量时，DSH 只接受来自继承进程环境的值，通过请求头认证 loopback WebSocket，并在完整的已认证应用结算后依次发送 `hello` 与 `ready`。此模式下 DSH 不打印启动 capability，也不打开浏览器。每个有效 `open.request` 都会产生一个新的、30 秒有效、单次使用的根 URL；控制连接断开、控制输入无效或进程关闭都会撤销所有未使用的交接。控制变量不完整、畸形或来自环境文件时，启动会失败，不会退回独立模式。
+
+DevBoard 会发现仓库内的[项目 runtime manifest](../../../.devboard/runtime.json)，并在 owner 关联该文件的精确版本后使用其中的结构化 `control` 声明。manifest 不包含 run 凭据或浏览器 capability。
 
 ### 配置
 
@@ -79,6 +83,8 @@ patch 会替换目标行的整个 `config`，因此每个 Web 行都重述自己
 
 URL 行与浏览器交接都是就绪信号：监督方一观察到该行就发起 RPC，浏览器一打开就请求页面，因此两者只在 Loader 配置树结算且 Connection 认证可用后运行——在没有 Loader 的手工构建树中则立即运行。启动中途被释放的树不会宣告任何内容。
 
+在 DevBoard 托管模式中，`hello` 只证明已认证的控制连接；`ready` 才是应用就绪信号，并携带操作系统实际分配的 loopback HTTP 端口。控制连接归进程根持有，因此 Connection 插件重载不会为同一个 DevBoard run 重新连接。
+
 ### LAN 信任采样
 
 `resolveLanTrust` 在启动时只采样一次网络：loopback 绑定（`127.0.0.1`）不派生任何 LAN 地址，绑定所有网卡则会加入每个非 internal IPv4 字面量。派生字面量加上显式的 `--trusted-host` 权威标识组成 `/api` 浏览器信任栅栏，打印的 LAN URL 始终与该栅栏一致。
@@ -88,6 +94,7 @@ URL 行与浏览器交接都是就绪信号：监督方一观察到该行就发�
 | 文件 | 职责 |
 |---|---|
 | [`src/index.ts`](src/index.ts) | `web-app` 粘合插件：dist 解析、LAN 信任采样、提示词段落、bash 变量、URL 行、浏览器交接 |
+| [`src/runtime-control.ts`](src/runtime-control.ts) | DevBoard Runtime Protocol v1 环境校验、已认证控制生命周期与关联的单次交接 |
 | [`src/startup.ts`](src/startup.ts) | `web-startup` 提供方：`--host`、`--port`、`--trusted-host`、`--no-open`、`--help` |
 | [`cordis.patch.yml`](cordis.patch.yml) | Web patch：重述的基础值、Web 宿主行、浏览器名录、preset 之后的 agent 层 |
 | [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件：无运行时不变式；每项贡献都由 registry 释放 |
@@ -95,6 +102,7 @@ URL 行与浏览器交接都是就绪信号：监督方一观察到该行就发�
 | [`tests/startup.spec.ts`](tests/startup.spec.ts) | 在真实 Loader 树上的命令行解析 |
 | [`tests/trusted-hosts.spec.ts`](tests/trusted-hosts.spec.ts) | LAN 信任采样 |
 | [`tests/browser-open.spec.ts`](tests/browser-open.spec.ts) | 页面可达后的默认浏览器交接 |
+| [`tests/runtime-control.spec.ts`](tests/runtime-control.spec.ts) | 托管环境、握手顺序、请求校验、关联、清理与不含秘密的诊断 |
 
 ### 不变式归属
 

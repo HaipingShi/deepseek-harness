@@ -16,6 +16,7 @@ const TOKEN_QUERY = 'token'
 const COOKIE_PREFIX = 'dsh-auth-'
 const COOKIE_PAYLOAD_VERSION = 1
 const STORED_SECRET_VERSION = 1
+const MAX_HANDOFF_MILLISECONDS = 120_000
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]*$/
 const PROCESS_LAUNCH_TOKENS = new WeakMap<object, string>()
 
@@ -28,6 +29,11 @@ interface BrowserCookiePayload {
   readonly version: typeof COOKIE_PAYLOAD_VERSION
   readonly authority: string
   readonly issuedAt: number
+  readonly expiresAt: number
+}
+
+interface BrowserHandoff {
+  readonly authority: string
   readonly expiresAt: number
 }
 
@@ -117,9 +123,15 @@ function cookieValue(headerValue: string, name: string): string | undefined {
   return undefined
 }
 
-/** Serialize the fixed browser-session attributes; generated names and values are cookie-safe base64url. */
-function sessionCookie(name: string, value: string, expiresAt: number, maxAgeSeconds: number): string {
-  return `${name}=${value}; Max-Age=${String(maxAgeSeconds)}; Path=/; Expires=${new Date(expiresAt).toUTCString()}; HttpOnly; SameSite=Strict`
+/** Serialize the browser-session attributes; generated names and values are cookie-safe base64url. */
+function sessionCookie(
+  name: string,
+  value: string,
+  expiresAt: number,
+  maxAgeSeconds: number,
+  sameSite: 'Lax' | 'Strict',
+): string {
+  return `${name}=${value}; Max-Age=${String(maxAgeSeconds)}; Path=/; Expires=${new Date(expiresAt).toUTCString()}; HttpOnly; SameSite=${sameSite}`
 }
 
 function signature(secret: Buffer, body: string): Buffer {
@@ -178,13 +190,14 @@ async function initializeSecret(credentials: CredentialProvider): Promise<Buffer
 }
 
 /**
- * Process launch-token exchange and persistent signed-cookie verification.
+ * Process launch-token and managed-handoff exchange with persistent signed-cookie verification.
  * Connection loads the credential provider's signing secret during activation
  * and retains it for synchronous request authentication.
  */
 export class BrowserAuth {
   private readonly launchToken: string
   private readonly maxAgeMilliseconds: number
+  private readonly handoffs = new Map<string, BrowserHandoff>()
 
   private constructor(
     processOwner: object,
@@ -230,6 +243,39 @@ export class BrowserAuth {
   }
 
   /**
+   * Mint one authority-bound, short-lived, single-use browser handoff URL.
+   * @param baseUrl - canonical browser origin without credentials.
+   * @param ttlMilliseconds - lifetime from 1 ms through 120 seconds.
+   * @returns root URL carrying a fresh one-time authentication capability.
+   */
+  issueBrowserHandoff(baseUrl: string, ttlMilliseconds: number): string {
+    if (!Number.isSafeInteger(ttlMilliseconds)
+      || ttlMilliseconds <= 0
+      || ttlMilliseconds > MAX_HANDOFF_MILLISECONDS
+      || !Number.isSafeInteger(Date.now() + ttlMilliseconds)) {
+      throw new Error('client-connection: browser handoff lifetime must be an integer from 1 through 120000 milliseconds')
+    }
+    const url = new URL(baseUrl)
+    url.pathname = '/'
+    url.search = ''
+    url.hash = ''
+    let token: string
+    do token = encodeBase64Url(randomBytes(SECRET_BYTES))
+    while (this.handoffs.has(token))
+    this.handoffs.set(token, {
+      authority: url.host,
+      expiresAt: Date.now() + ttlMilliseconds,
+    })
+    url.searchParams.set(TOKEN_QUERY, token)
+    return url.href
+  }
+
+  /** Invalidate every outstanding browser handoff capability. */
+  invalidateBrowserHandoffs(): void {
+    this.handoffs.clear()
+  }
+
+  /**
    * Authenticate an index request. A valid root query token mints the cookie
    * and redirects to clean `/`; a valid cookie lets the caller serve the
    * index; every other request receives the same minimal 401 response.
@@ -243,26 +289,32 @@ export class BrowserAuth {
     const tokens = url.searchParams.getAll(TOKEN_QUERY)
     if (tokens.length > 0) {
       const authority = requestAuthority(req.headers)
+      const token = tokens.join('')
       if (req.method === 'GET' && url.pathname === '/' && tokens.length === 1
-        && authority !== undefined && tokenMatches(tokens.join(''), this.launchToken)) {
-        const issuedAt = Date.now()
-        const expiresAt = issuedAt + this.maxAgeMilliseconds
-        const value = encodeCookie({
-          version: COOKIE_PAYLOAD_VERSION,
-          authority,
-          issuedAt,
-          expiresAt,
-        }, this.secret)
-        res.writeHead(303, {
-          'cache-control': 'no-store',
-          'location': '/',
-          'referrer-policy': 'no-referrer',
-          'set-cookie': sessionCookie(
-            cookieName(authority), value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000),
-          ),
-        })
-        res.end()
-        return false
+        && authority !== undefined) {
+        const isLaunchToken = tokenMatches(token, this.launchToken)
+        const isBrowserHandoff = !isLaunchToken && this.consumeBrowserHandoff(token, authority)
+        if (isLaunchToken || isBrowserHandoff) {
+          const issuedAt = Date.now()
+          const expiresAt = issuedAt + this.maxAgeMilliseconds
+          const value = encodeCookie({
+            version: COOKIE_PAYLOAD_VERSION,
+            authority,
+            issuedAt,
+            expiresAt,
+          }, this.secret)
+          res.writeHead(303, {
+            'cache-control': 'no-store',
+            'location': '/',
+            'referrer-policy': 'no-referrer',
+            'set-cookie': sessionCookie(
+              cookieName(authority), value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000),
+              isBrowserHandoff ? 'Lax' : 'Strict',
+            ),
+          })
+          res.end()
+          return false
+        }
       }
       if (req.method === 'GET' && url.pathname === '/' && this.isAuthenticated(req)) {
         res.writeHead(303, {
@@ -309,5 +361,17 @@ export class BrowserAuth {
     res.end(req.method === 'HEAD'
       ? undefined
       : 'dsh web authentication required; reopen the URL printed by dsh web.\n')
+  }
+
+  private consumeBrowserHandoff(token: string, authority: string): boolean {
+    const handoff = this.handoffs.get(token)
+    if (handoff === undefined) return false
+    if (handoff.expiresAt <= Date.now()) {
+      this.handoffs.delete(token)
+      return false
+    }
+    if (handoff.authority !== authority) return false
+    this.handoffs.delete(token)
+    return true
   }
 }
