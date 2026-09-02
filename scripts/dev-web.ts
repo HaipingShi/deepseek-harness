@@ -16,7 +16,7 @@
  * MUST NOT run concurrently with `pnpm run build`: both write the same
  * `lib/` and `apps/web/dist/` trees.
  *
- * Usage: `pnpm exec tsx scripts/dev-web.ts [--poll[=ms]]`. Requires one prior
+ * Usage: `node scripts/dev-web.ts [--poll[=ms]]`. Requires one prior
  * `pnpm run build`: every stage is incremental over the previous stage's output
  * and none of them bootstraps a missing tree. `--poll` switches the source
  * watchers to polling (default 500ms): network mounts (weka) deliver no inotify
@@ -26,7 +26,10 @@
  *
  * Each package keeps its own tsdown.config.ts untouched: this script layers
  * `watch` through API-level inline config (tsdown workspace mode fills inline
- * keys under each package's file config, and no package config defines it).
+ * keys under each package's file config, and no package config defines it). The
+ * script stays within Node's erasable TypeScript syntax because loading tsdown
+ * through tsx composes incompatible asynchronous and synchronous ESM hooks on
+ * supported Node 24 releases.
  */
 import { globSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve, sep } from 'node:path'
