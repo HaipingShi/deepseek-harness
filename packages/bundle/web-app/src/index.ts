@@ -26,6 +26,11 @@ import { scrubbedParentEnv } from '@deepseek-ai/dsh-subprocess'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-shell-env'
+import {
+  createDevBoardRuntimeControl,
+  type DevBoardRuntimeControl,
+  type RuntimeControlOptions,
+} from './runtime-control.ts'
 
 /** Stable Cordis plugin name. */
 export const name = 'web-app'
@@ -33,6 +38,7 @@ export const name = 'web-app'
 /** This dsh installation's root, from either this package's source or built entry. */
 const SOURCE_ROOT = fileURLToPath(new URL('../../../..', import.meta.url))
 const ANNOUNCED_ROOTS = new WeakSet<Context>()
+const CONTROLLED_ROOTS = new WeakSet<Context>()
 
 /** Runtime service that releases Web rows after bind-dependent values resolve. */
 const WEB_RUNTIME_SERVICE = 'webRuntime'
@@ -78,6 +84,8 @@ const DSH_WEB_URL = 'DSH_WEB_URL' as const
 // Display-only mirror of the webserver schema's loopback host: the address the
 // local URL always prints. Not a source of truth — the schema is.
 const LOOPBACK_HOST = '127.0.0.1'
+/** Browser capability lifetime for one DevBoard `open.request`. */
+const DEVBOARD_HANDOFF_TTL_MILLISECONDS = 30_000
 /** The webserver schema's all-interfaces bind literal. */
 const ALL_INTERFACES_HOST = '0.0.0.0'
 
@@ -223,7 +231,8 @@ async function openBrowser(url: string): Promise<void> {
 export const internals: {
   resolveDistIndex: () => string
   openBrowser: (url: string) => Promise<void>
-} = { resolveDistIndex, openBrowser }
+  createRuntimeControl: (options: RuntimeControlOptions) => DevBoardRuntimeControl | undefined
+} = { resolveDistIndex, openBrowser, createRuntimeControl: createDevBoardRuntimeControl }
 
 /**
  * Mount the Web runtime: dist serving, surface prompt, the bash runtime
@@ -233,9 +242,23 @@ export const internals: {
  */
 export function apply(ctx: Context, config: Config): void {
   const runtime = resolveLanTrust(ctx.webServer.host, config.trustedHosts)
+  const runtimeControl = internals.createRuntimeControl({
+    environment: launchEnvironmentOf(ctx),
+    port: ctx.webServer.port,
+    createHandoffUrl: () => {
+      const connection = ctx.get('connection')
+      if (connection === undefined) throw new Error('web-app: Connection unavailable for browser handoff')
+      return connection.issueBrowserHandoff(localWebUrl(ctx), DEVBOARD_HANDOFF_TTL_MILLISECONDS)
+    },
+    invalidateHandoffs: () => { ctx.get('connection')?.invalidateBrowserHandoffs() },
+  })
+  if (runtimeControl !== undefined && ctx.webServer.host !== LOOPBACK_HOST) {
+    throw new Error('web-app: DevBoard managed mode requires the loopback Web server')
+  }
   // The loopback URL belongs to this host. Under SSH, the operator reaches it
   // through a local forwarding address that this process cannot derive.
-  const handoffBrowser = config.openBrowser && !launchedThroughSsh(ctx)
+  const handoffBrowser = runtimeControl === undefined
+    && config.openBrowser && !launchedThroughSsh(ctx)
   // Release dependent rows only after bind-dependent trust has been sampled once.
   ctx.provide(WEB_RUNTIME_SERVICE, runtime)
   ctx.plugin(FrontendStatic, { distIndex: internals.resolveDistIndex() })
@@ -258,7 +281,33 @@ export function apply(ctx: Context, config: Config): void {
       })
     })
   }
-  if (config.printUrl || handoffBrowser) {
+  if (runtimeControl !== undefined) {
+    ctx.inject(['connection'], async (connectionCtx) => {
+      if (CONTROLLED_ROOTS.has(connectionCtx.root)) {
+        return () => { /* The process-root controller survives this Connection generation. */ }
+      }
+      CONTROLLED_ROOTS.add(connectionCtx.root)
+      await connectionCtx.root.effect(async () => {
+        await runtimeControl.connect()
+        const announceReady = (): void => {
+          if (runtimeControl.getState().phase !== 'HELLO') return
+          if (connectionCtx.root.get('webServer') === undefined
+            || connectionCtx.root.get('connection') === undefined) {
+            void runtimeControl.close()
+            return
+          }
+          runtimeControl.markReady()
+        }
+        const settled = connectionCtx.get('loader')?.await()
+        if (settled === undefined) announceReady()
+        else {
+          void settled.then(announceReady, () => runtimeControl.close())
+        }
+        return () => runtimeControl.close()
+      }, 'web-app: DevBoard runtime control')
+      return () => { /* The process-root effect owns control teardown. */ }
+    })
+  } else if (config.printUrl || handoffBrowser) {
     ctx.inject(['connection'], (connectionCtx) => {
       // The URL line and browser handoff are readiness signals: supervisors RPC
       // as soon as they observe the line, while a browser requests the page as

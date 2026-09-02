@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Run `dsh --profile web` and the interface opens in your default browser, ready for interactive chat with the agent. You get the conversation view, model and settings management, and session history, backed by the same model access, tools, and safety defaults as every other surface. The command prints a tokenized startup URL; the browser exchanges that token for a signed session cookie and redirects to the clean root URL. You can change the port, suppress the browser handoff, and allow extra hosts from the command line; binding all network interfaces is intentionally not supported. Choose it for interactive work in the browser; `dsh-headless` is the one-shot command-line sibling.
+Run `dsh --profile web` and the interface opens in your default browser, ready for interactive chat with the agent. You get the conversation view, model and settings management, and session history, backed by the same model access, tools, and safety defaults as every other surface. A standalone command prints a tokenized startup URL; the browser exchanges that token for a signed session cookie and redirects to the clean root URL. A DevBoard-managed command instead reports readiness and fresh one-time browser handoffs over Runtime Protocol v1, leaving DevBoard as the sole browser opener. You can change the port, suppress the standalone browser handoff, and allow extra hosts from the command line; binding all network interfaces is intentionally not supported. Choose it for interactive work in the browser; `dsh-headless` is the one-shot command-line sibling.
 
 ## Table of Contents
 
@@ -35,6 +35,10 @@ dsh --profile web --no-open --port 8080
 ```
 
 After startup you see a `dsh web:` line whose root URL carries a fresh process token. Unless `--no-open` or an SSH session suppresses it, the default browser opens that URL, receives a signed cookie, and redirects to the clean root page. You know it worked when the page loads and you can chat with the agent. Two failures to expect: if the frontend is not built, startup stops with a build hint (`pnpm run build` in a checkout); if the browser cannot be opened, a credential-free diagnostic prints to stderr while the server keeps running — open the printed startup URL yourself.
+
+When DevBoard injects all three Runtime Protocol control variables, DSH accepts them only from the inherited process environment, authenticates the loopback WebSocket through request headers, and sends `hello` followed by `ready` after the complete authenticated application settles. DSH prints no startup capability and opens no browser in this mode. Each valid `open.request` produces a new 30-second, single-use root URL; disconnect, invalid control input, or shutdown revokes every unused handoff. Partial, malformed, or file-sourced control variables fail startup instead of falling back to standalone mode.
+
+DevBoard discovers the checked-in [project runtime manifest](../../../.devboard/runtime.json) and uses its structured `control` declaration after an owner associates that exact file. The manifest contains no run credential or browser capability.
 
 ### Configuration
 
@@ -79,6 +83,8 @@ A patch replaces the targeted row's whole `config`, so each web row restates eve
 
 The URL line and browser handoff are readiness signals: supervisors RPC as soon as they observe the line, and a browser requests the page as soon as it opens, so both run only after the Loader tree settles and Connection authentication is available — or immediately in a hand-built tree without a Loader. A tree disposed mid-boot announces nothing.
 
+In DevBoard-managed mode, `hello` proves only the authenticated control connection. `ready` is the application-ready signal and carries the actual OS-assigned loopback HTTP port. The control connection belongs to the process root, so a Connection plugin reload does not reconnect the same DevBoard run.
+
 ### LAN trust sampling
 
 `resolveLanTrust` samples the network once at boot: a loopback bind (`127.0.0.1`) derives no LAN addresses, while an all-interfaces bind adds every non-internal IPv4 literal. The derived literals plus the explicit `--trusted-host` authorities form the `/api` browser-trust fence, and the printed LAN URL always matches that fence.
@@ -88,6 +94,7 @@ The URL line and browser handoff are readiness signals: supervisors RPC as soon 
 | File | Role |
 |---|---|
 | [`src/index.ts`](src/index.ts) | The `web-app` glue plugin: dist resolution, LAN trust sampling, prompt sections, bash variable, URL line, browser handoff |
+| [`src/runtime-control.ts`](src/runtime-control.ts) | DevBoard Runtime Protocol v1 environment validation, authenticated control lifecycle, and correlated one-time handoffs |
 | [`src/startup.ts`](src/startup.ts) | The `web-startup` provider: `--host`, `--port`, `--trusted-host`, `--no-open`, `--help` |
 | [`cordis.patch.yml`](cordis.patch.yml) | The web patch: restated base values, web host rows, browser roster, agent plane behind presets |
 | [`src/invariant.ts`](src/invariant.ts) | Invariant companion: no runtime invariant; every contribution is registry-disposed |
@@ -95,6 +102,7 @@ The URL line and browser handoff are readiness signals: supervisors RPC as soon 
 | [`tests/startup.spec.ts`](tests/startup.spec.ts) | Command-line parsing over a real Loader tree |
 | [`tests/trusted-hosts.spec.ts`](tests/trusted-hosts.spec.ts) | LAN-trust sampling |
 | [`tests/browser-open.spec.ts`](tests/browser-open.spec.ts) | Default-browser handoff after the page is reachable |
+| [`tests/runtime-control.spec.ts`](tests/runtime-control.spec.ts) | Managed environment, handshake order, request validation, correlation, cleanup, and secret-free diagnostics |
 
 ### Invariant ownership
 
