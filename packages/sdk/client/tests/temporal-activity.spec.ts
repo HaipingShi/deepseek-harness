@@ -1,6 +1,7 @@
 /** Keyless execution tests for the repository's Temporal Activity example. */
 
 import { readFileSync } from 'node:fs'
+import { SessionSeq } from '@deepseek-ai/dsh-session'
 import { describe, expect, it, vi } from 'vitest'
 import type { DeepSeekHarnessOptions, RunResult } from '../src/types.ts'
 
@@ -53,7 +54,7 @@ function completedResult(): RunResult {
     events: [
       {
         type: 'turn/end',
-        seq: 0,
+        seq: SessionSeq(0),
         time: 1,
         data: { turn: 1, reason: { kind: 'completed' } },
       },

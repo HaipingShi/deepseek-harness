@@ -58,6 +58,8 @@ Agent Card 是发现元数据，不是授权。请审查其来源、支持的接
 
 keyless 集成测试会在 loopback 启动官方 A2A JSON-RPC server，提供真实 Agent Card，验证 header 转发，经官方 client 发送文本消息，并检查 Harness 结果。测试还证明不安全 HTTP URL、非文本 prompt、非文本输出和非终态都会 fail closed。这是针对 fixture 的互操作证据，不是外部部署 canary 或 A2A 一致性认证。
 
+不发布运行时不变式伴生入口，因为 subagent seam 负责提供方注册和运行生命周期，而官方 SDK 校验 A2A wire 值；此适配器不暴露可独立检测漂移的第二份本地观测。
+
 <a id="model-experience"></a>
 ## 模型体验
 

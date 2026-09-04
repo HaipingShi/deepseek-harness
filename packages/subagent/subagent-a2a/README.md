@@ -58,6 +58,8 @@ The Agent Card is discovery metadata, not authorization. Review its origin, supp
 
 The keyless integration test boots an official A2A JSON-RPC server on loopback, serves a real Agent Card, verifies header forwarding, sends a text message through the official client, and checks the Harness result. It also proves unsafe HTTP URLs, non-text prompts, non-text output, and non-terminal states fail closed. This is interoperability evidence for the fixture, not an external deployment canary or A2A conformance certification.
 
+No runtime invariant companion is published because the subagent seam owns provider registration and run lifecycle, while the official SDK validates A2A wire values; this adapter exposes no second local observation that can detect drift independently.
+
 <a id="model-experience"></a>
 ## Model Experience
 

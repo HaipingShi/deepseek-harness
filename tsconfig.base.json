@@ -363,7 +363,6 @@
       "@deepseek-ai/dsh-subagent": ["./packages/subagent/subagent/src"],
       "@deepseek-ai/dsh-subagent/invariant": ["./packages/subagent/subagent/src/invariant.ts"],
       "@deepseek-ai/dsh-subagent-a2a": ["./packages/subagent/subagent-a2a/src"],
-      "@deepseek-ai/dsh-subagent-a2a/invariant": ["./packages/subagent/subagent-a2a/src/invariant.ts"],
       "@deepseek-ai/dsh-subagent-acp": ["./packages/subagent/subagent-acp/src"],
       "@deepseek-ai/dsh-subagent-claude-code": ["./packages/subagent/subagent-claude-code/src"],
       "@deepseek-ai/dsh-subagent-codex": ["./packages/subagent/subagent-codex/src"],
