@@ -9,7 +9,7 @@ kind: "package-group"
 
 ## 概述
 
-`guard/` 组通过监视两种常见失败模式来保持 agent loop（智能体循环）高效。`repeat-tool-reminder` 会在模型重复完全相同的工具调用时提醒它改变方法或结束任务，让卡住的循环不再浪费时间和 token。`timeout-policy` 为声明了限时的工具调用设置时间上限，让挂起的调用向模型返回清晰的超时错误，而不是拖住整个会话。两者都随 `dsh` base 组合默认启用；组合可以调优或移除它们。
+`guard/` 组通过监视常见的失败模式来保持 agent loop（智能体循环）高效。`repeat-tool-reminder` 会在模型重复完全相同的工具调用时提醒它改变方法或结束任务，让卡住的循环不再浪费时间和 token。`timeout-policy` 为声明了限时的工具调用设置时间上限，让挂起的调用向模型返回清晰的超时错误，而不是拖住整个会话。`call-budget` 按次数限制一个 agent 在两个人类输入之间的工具调用：额度内的调用正常执行，超出额度的第一次调用被拒绝，当前轮随之结束。前两者随 `dsh` base 组合默认启用，预算 guard 需显式挂载；组合可以调优或移除它们。
 
 ## 目录
 
@@ -22,12 +22,13 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-两个小插件分别覆盖两种模式；下文每个 README 都说明何时保留、调优或移除它。
+三个小插件分别覆盖各自的模式；下文每个 README 都说明何时保留、调优或移除它。
 
 | 包 | 提供什么 |
 |---|---|
 | [`repeat-tool-reminder/`](repeat-tool-reminder/README.zh.md) | 在模型重复相同工具调用时提醒它，使其改变方法或结束任务 |
 | [`timeout-policy/`](timeout-policy/README.zh.md) | 为声明了限时的工具调用设置超时，让模型得到清晰错误而不是无限等待 |
+| [`call-budget/`](call-budget/README.zh.md) | 按次数限制两个人类输入之间的工具调用；超出额度的调用被拒绝，当前轮随之结束 |
 
 -----
 

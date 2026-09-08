@@ -317,6 +317,30 @@ export type Config = LocalConfig
 
 来源：[`packages/shell/bash-sandbox/src/index.ts:35`](../packages/shell/bash-sandbox/src/index.ts)
 
+<a id="deepseek-aidsh-call-budget"></a>
+
+## `@deepseek-ai/dsh-call-budget`
+
+```ts config-catalog
+/**
+ * Plugin config, validated by the same-named schemastery schema plus the
+ * load-time checks in `apply` (misconfiguration fails loud: a limit below 1,
+ * an empty pattern, or a budget without any limit throws at plugin load,
+ * never a silent fall-back). `tools` keys are `*`-wildcard predicates over
+ * tool names at call time, not references to registry entries — a pattern
+ * matching no currently registered tool is valid (`tools: { mcp_*: 4 }` must
+ * stay legal in a deployment that loads no MCP tools).
+ */
+export interface Config {
+  /** Maximum tool calls counted in one budget window, across every tool. */
+  total?: number
+  /** Per-pattern call caps in one budget window, keyed by `*`-wildcard tool-name patterns. */
+  tools?: Record<string, number>
+}
+```
+
+来源：[`packages/guard/call-budget/src/index.ts:26`](../packages/guard/call-budget/src/index.ts)
+
 <a id="deepseek-aidsh-client-connection"></a>
 
 ## `@deepseek-ai/dsh-client-connection`

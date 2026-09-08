@@ -13,7 +13,7 @@ import {
 } from '../src/format.ts'
 import { runPersistenceContract, meta, oneTurnLog } from '../../session-persistence/tests/contract.ts'
 import { runLiveWritePathContract } from '../../session-persistence/tests/live-write-contract.ts'
-import { LIVE_WRITE_BATCH_MAX_DELAY_MS, type JsonlSessionHandle } from '../src/storage.ts'
+import { LIVE_WRITE_BATCH_MAX_DELAY_MS, JsonlSessionHandle } from '../src/storage.ts'
 import SessionStore from '@deepseek-ai/dsh-session'
 
 const statRace = vi.hoisted(() => ({
@@ -814,6 +814,7 @@ describe('JsonlSessionPersistence: durability and crash semantics', () => {
     } catch (error) {
       expect(error).toBeInstanceOf(AggregateError)
       const aggregate = error as AggregateError
+      expect(aggregate.name).toBe('AppendRollbackError')
       expect(aggregate.message).toContain(`failed to roll back append to "${path}"`)
       expect(aggregate.errors).toHaveLength(2)
       expect(aggregate.errors[0]).toMatchObject({ message: 'simulated append fsync failure' })
@@ -821,6 +822,115 @@ describe('JsonlSessionPersistence: durability and crash semantics', () => {
     } finally {
       backend.rollbackAppend = realRollback
       syncSpy.mockRestore()
+    }
+  })
+
+  it('a failed rollback poisons the handle; a fresh open recovers from the file truth', async () => {
+    const m = meta('rollback-poison')
+    await writeLog(ctx.sessionPersistence, m, oneTurnLog())
+    const path = rawLogPath(root, undefined, m.id)
+    const sizeBefore = (await stat(path)).size
+
+    const probe = await (await import('node:fs/promises')).open(path, 'r')
+    const proto = Object.getPrototypeOf(probe) as { sync: () => Promise<void> }
+    await probe.close()
+    const realSync = proto.sync
+    let failed = false
+    const syncSpy = vi.spyOn(proto, 'sync').mockImplementation(async function (this: unknown) {
+      if (!failed) { failed = true; throw new Error('simulated append fsync failure') }
+      return realSync.call(this)
+    })
+    const backend = ctx.sessionPersistence as unknown as {
+      rollbackAppend: (path: string, size: number) => Promise<void>
+    }
+    const realRollback = backend.rollbackAppend.bind(backend)
+    backend.rollbackAppend = () => Promise.reject(new Error('simulated rollback failure'))
+
+    const handle = await ctx.sessionPersistence.open(m.id, 'write')
+    const turn2: SessionEvent[] = [
+      { type: 'turn/start', seq: SessionSeq(6), time: 9, data: { turn: 2 } },
+      { type: 'turn/end', seq: SessionSeq(7), time: 10, data: { turn: 2, reason: { kind: 'completed' } } },
+    ]
+    try {
+      // The append's fsync fails and the rollback fails too: the batch's
+      // complete bytes stay past the pre-append size, in an unknown state.
+      await expect(handle.append(turn2)).rejects.toThrow(/failed to roll back append/)
+      const unknownSize = (await stat(path)).size
+      expect(unknownSize).toBeGreaterThan(sizeBefore)
+
+      // The same handle refuses further appends instead of re-running a batch
+      // against unknown bytes — no duplicate region can be produced.
+      await expect(handle.append([{ type: 'turn/start', seq: SessionSeq(8), time: 11, data: { turn: 3 } }]))
+        .rejects.toThrow(/unknown physical state after a failed append rollback/)
+      expect((await stat(path)).size).toBe(unknownSize)
+
+      // Close releases ownership; a fresh open re-derives the log from the
+      // file. The stranded bytes were complete records, so they are the truth.
+      await handle.close()
+      const recovered = await readAll(ctx.sessionPersistence, m.id)
+      expect(recovered.events.map(event => event.seq)).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
+
+      // The fresh writer continues contiguously from the recovered end.
+      const fresh = await ctx.sessionPersistence.open(m.id, 'write')
+      try {
+        await fresh.append([{ type: 'turn/start', seq: SessionSeq(8), time: 11, data: { turn: 3 } }])
+      } finally {
+        await fresh.close()
+      }
+      const after = await readAll(ctx.sessionPersistence, m.id)
+      expect(after.events.map(event => event.seq)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8])
+    } finally {
+      backend.rollbackAppend = realRollback
+      syncSpy.mockRestore()
+      await handle.close().catch(() => {})
+    }
+  })
+
+  it('a poisoned handle refuses its retained live batch on retry, and close still releases ownership', async () => {
+    const m = meta('rollback-poison-live')
+    await writeLog(ctx.sessionPersistence, m, oneTurnLog())
+    const path = rawLogPath(root, undefined, m.id)
+
+    const probe = await (await import('node:fs/promises')).open(path, 'r')
+    const proto = Object.getPrototypeOf(probe) as { sync: () => Promise<void> }
+    await probe.close()
+    const realSync = proto.sync
+    let failed = false
+    const syncSpy = vi.spyOn(proto, 'sync').mockImplementation(async function (this: unknown) {
+      if (!failed) { failed = true; throw new Error('simulated append fsync failure') }
+      return realSync.call(this)
+    })
+    const backend = ctx.sessionPersistence as unknown as {
+      rollbackAppend: (path: string, size: number) => Promise<void>
+    }
+    const realRollback = backend.rollbackAppend.bind(backend)
+    backend.rollbackAppend = () => Promise.reject(new Error('simulated rollback failure'))
+
+    const handle = await ctx.sessionPersistence.open(m.id, 'write')
+    try {
+      // Poison the handle through a direct append whose rollback fails.
+      await expect(handle.append([{ type: 'turn/start', seq: SessionSeq(6), time: 9, data: { turn: 2 } }]))
+        .rejects.toThrow(/failed to roll back append/)
+
+      // A routed live event lands in the retention buffer; the next drain
+      // must refuse loudly instead of re-appending the retained batch.
+      const live = handle as JsonlSessionHandle
+      live.enqueueLive(
+        { type: 'turn/end', seq: SessionSeq(7), time: 10, data: { turn: 2, reason: { kind: 'completed' } } },
+        () => {},
+      )
+      await expect(live.drainLive()).rejects.toThrow(/unknown physical state after a failed append rollback/)
+      const sizeAfterPoison = (await stat(path)).size
+
+      // Close surfaces the failing drain but still releases write ownership.
+      await expect(handle.close()).rejects.toThrow(/unknown physical state after a failed append rollback/)
+      const reopened = await ctx.sessionPersistence.open(m.id, 'write')
+      await reopened.close()
+      expect((await stat(path)).size).toBe(sizeAfterPoison)
+    } finally {
+      backend.rollbackAppend = realRollback
+      syncSpy.mockRestore()
+      await handle.close().catch(() => {})
     }
   })
 

@@ -685,6 +685,94 @@ describe('JsonlSessionPersistence: default Zstandard encoding', () => {
     await expect(readAll(ctx.sessionPersistence, header.id)).rejects.toThrow(/complete frame contains a torn JSONL record/)
   })
 
+  it('a rollback failure while rewriting the recovered tail poisons the handle', async () => {
+    const root = await freshRoot()
+    const ctx = await mount(root)
+    const header = meta('recovered-rewrite-poison')
+    await writeLog(ctx.sessionPersistence, header, oneTurnLog())
+    const path = logPath(root, header.cwd, header.id, 'zstd')
+
+    // A final frame torn at its checksum byte carries complete records: the
+    // write-open primes recoveredTail with them and tornTruncateTo with the
+    // torn byte offset, so the next mutation truncates and rewrites first.
+    const secondTurn: SessionEvent[] = [
+      { type: 'turn/start', seq: SessionSeq(6), time: 7, data: { turn: 2 } },
+      { type: 'turn/end', seq: SessionSeq(7), time: 8, data: { turn: 2, reason: { kind: 'completed' } } },
+    ]
+    const frame = await compressZstdFrame(secondTurn.map(event => JSON.stringify(event)).join('\n') + '\n')
+    await appendFile(path, frame.subarray(0, -1))
+
+    // Fail the fsync of the REWRITE specifically (sync call 2: call 1 is the
+    // truncate repair's own sync) and make its rollback fail too.
+    const probe = await open(path, 'r')
+    const prototype = Object.getPrototypeOf(probe) as { sync: () => Promise<void> }
+    await probe.close()
+    const realSync = prototype.sync
+    let syncCalls = 0
+    const syncSpy = vi.spyOn(prototype, 'sync').mockImplementation(async function (this: FileHandle) {
+      syncCalls += 1
+      if (syncCalls === 2) throw new Error('simulated recovered-rewrite fsync failure')
+      return realSync.call(this)
+    })
+    const backend = ctx.sessionPersistence as unknown as {
+      rollbackAppend: (rollbackPath: string, size: number) => Promise<void>
+    }
+    const realRollback = backend.rollbackAppend.bind(backend)
+    let rollbackCalls = 0
+    backend.rollbackAppend = (rollbackPath: string, size: number): Promise<void> => {
+      rollbackCalls += 1
+      return rollbackCalls === 1
+        ? Promise.reject(new Error('simulated rollback failure'))
+        : realRollback(rollbackPath, size)
+    }
+
+    const handle = await ctx.sessionPersistence.open(header.id, 'write')
+    const thirdTurn: SessionEvent[] = [
+      { type: 'turn/start', seq: SessionSeq(8), time: 9, data: { turn: 3 } },
+    ]
+    try {
+      // The recovered-tail rewrite is the first mutation: its fsync and rollback
+      // both fail, so the rewrite's bytes stay in the file in an unknown state.
+      await expect(handle.append(thirdTurn)).rejects.toThrow(/failed to roll back append/)
+      expect(rollbackCalls).toBe(1)
+
+      // The next append is refused BEFORE any underlying write runs — no
+      // second rewrite of the recovered events can reach the file.
+      const bytesAfterFailure = await readFile(path)
+      await expect(handle.append(thirdTurn)).rejects.toThrow(/unknown physical state after a failed append rollback/)
+      await expect(handle.append([...thirdTurn, { type: 'turn/end', seq: SessionSeq(9), time: 10, data: { turn: 3, reason: { kind: 'completed' } } }]))
+        .rejects.toThrow(/unknown physical state after a failed append rollback/)
+      expect(await readFile(path)).toEqual(bytesAfterFailure)
+
+      // The routed live path refuses through the same latch, and close
+      // surfaces the refusal while still releasing write ownership.
+      const live = handle as unknown as {
+        enqueueLive(event: SessionEvent, report: (error: unknown) => void): void
+        drainLive(): Promise<void>
+      }
+      live.enqueueLive({ type: 'turn/end', seq: SessionSeq(9), time: 10, data: { turn: 3, reason: { kind: 'completed' } } }, () => {})
+      await expect(live.drainLive()).rejects.toThrow(/unknown physical state after a failed append rollback/)
+      await expect(handle.close()).rejects.toThrow(/unknown physical state after a failed append rollback/)
+
+      // A fresh open re-derives the log from the file: the stranded rewrite
+      // frame carried complete recovered records, so they are the truth and
+      // the fresh writer continues contiguously after them.
+      const fresh = await ctx.sessionPersistence.open(header.id, 'write')
+      try {
+        expect((await fresh.read()).map(event => event.seq)).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
+        await fresh.append([{ type: 'turn/start', seq: SessionSeq(8), time: 9, data: { turn: 3 } }])
+      } finally {
+        await fresh.close()
+      }
+      const after = await readAll(ctx.sessionPersistence, header.id)
+      expect(after.events.map(event => event.seq)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8])
+    } finally {
+      backend.rollbackAppend = realRollback
+      syncSpy.mockRestore()
+      await handle.close().catch(() => {})
+    }
+  })
+
   it('rolls back a checksummed append frame when fsync fails', async () => {
     const root = await freshRoot()
     const ctx = await mount(root)

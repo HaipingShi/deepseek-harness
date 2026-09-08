@@ -33,6 +33,19 @@ import type {
 /** Maximum intentional wait before a routed live session batch starts writing. */
 export const LIVE_WRITE_BATCH_MAX_DELAY_MS = 200
 
+/**
+ * An append whose physical rollback also failed. The artifact is left in an
+ * unknown byte state — the failed batch's bytes may be absent, partial, or
+ * fully present past the pre-append size — so no further append may target
+ * the file until a fresh write open re-derives the truth from its bytes.
+ */
+export class AppendRollbackError extends AggregateError {
+  constructor(path: string, cause: unknown, rollbackError: unknown) {
+    super([cause, rollbackError], `failed to roll back append to "${path}"`)
+    this.name = 'AppendRollbackError'
+  }
+}
+
 /** The file-storage primitives the handle drives on its owning service. */
 export interface JsonlHandleStorage {
   /** Append encoded lines; `isMaterialized` selects create-vs-extend publication. */
@@ -70,7 +83,19 @@ export interface StorageHandleState {
   inheritedEventCount: SessionLogOffset
   /** The validated stored prefix from a write open, served to reads until the first append. */
   primed?: SessionEvent[] | undefined
+  /**
+   * Set when a persistence write's rollback failed and the artifact's byte
+   * state became unknown — covering the plain batch append and the recovered
+   * torn-tail rewrite alike. Every further append refuses with this message;
+   * closing the handle releases ownership so a fresh write open can re-derive
+   * the log from the file and repair or refuse.
+   */
+  poisoned?: string | undefined
 }
+
+/** Refusal text latched into {@link StorageHandleState.poisoned} on rollback failure. */
+const POISON_MESSAGE = 'the log is in an unknown physical state after a failed append rollback; '
+  + 'further appends are refused — close this handle and reopen the session to recover'
 
 /**
  * The JSONL session handle. Mutations serialize on a per-handle promise
@@ -265,22 +290,39 @@ export class JsonlSessionHandle implements SessionHandle {
   private async persistContiguous(batch: readonly SessionEvent[]): Promise<void> {
     if (this.access !== 'write') throw new SessionReadOnlyError(this.id, 'append')
     if (batch.length === 0) return
+    if (this.state.poisoned !== undefined) {
+      throw new Error(`session "${this.id}": ${this.state.poisoned}`)
+    }
     assertContiguous(this.id, batch, this.state.cursor)
     // Commit any pending torn-tail repair first, clearing each step's state
     // only once it lands so a failed step retries on the next mutation:
     // truncate the torn bytes, then durably rewrite the complete events
-    // recovered from them (already counted in the primed cursor).
+    // recovered from them (already counted in the primed cursor). A rollback
+    // failure in the rewrite poisons the handle exactly like a plain append:
+    // the recovered events' bytes are in an unknown state, so the rewrite
+    // must not be silently re-run — and the not-yet-landed recovery state
+    // stays in place for inspection.
     if (this.state.tornTruncateTo !== undefined) {
       await this.storage.truncateTornTail(this.header, this.state.tornTruncateTo)
       this.state.tornTruncateTo = undefined
     }
     if (this.state.recoveredTail !== undefined) {
-      if (this.state.recoveredTail.length > 0) {
-        await this.storage.persistBatch(this.header, this.state.recoveredTail, this.state.materialized, this.state.inheritedEventCount)
+      try {
+        if (this.state.recoveredTail.length > 0) {
+          await this.storage.persistBatch(this.header, this.state.recoveredTail, this.state.materialized, this.state.inheritedEventCount)
+        }
+        this.state.recoveredTail = undefined
+      } catch (error) {
+        if (error instanceof AppendRollbackError) this.state.poisoned = POISON_MESSAGE
+        throw error
       }
-      this.state.recoveredTail = undefined
     }
-    await this.storage.persistBatch(this.header, batch, this.state.materialized, this.state.inheritedEventCount)
+    try {
+      await this.storage.persistBatch(this.header, batch, this.state.materialized, this.state.inheritedEventCount)
+    } catch (error) {
+      if (error instanceof AppendRollbackError) this.state.poisoned = POISON_MESSAGE
+      throw error
+    }
     this.state.materialized = true
     this.state.cursor += batch.length
     this.state.primed = undefined
