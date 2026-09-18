@@ -823,7 +823,7 @@ describe('JsonlSessionPersistence: default Zstandard encoding', () => {
       // the fresh writer continues contiguously after them.
       const fresh = await ctx.sessionPersistence.open(header.id, 'write')
       try {
-        expect((await fresh.read()).map(event => event.seq)).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
+        expect((await fresh.read()).events.map(event => event.seq)).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
         await fresh.append([{ type: 'turn/start', seq: SessionSeq(8), time: 9, data: { turn: 3 } }])
       } finally {
         await fresh.close()

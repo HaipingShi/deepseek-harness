@@ -181,10 +181,10 @@ describe('third-party memory MCP example overlays', () => {
     const bootDiagnostic = async (): Promise<string> => {
       const chunks: string[] = []
       const originalWrite = process.stderr.write.bind(process.stderr)
-      process.stderr.write = ((chunk: Uint8Array | string): boolean => {
+      process.stderr.write = (chunk: Uint8Array | string): boolean => {
         chunks.push(typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk))
         return originalWrite(chunk)
-      }) as typeof process.stderr.write
+      }
       try {
         const patches = loadOverlayPatches('memory-mcp-config-test', file)
         insertedRow(patches).name = 'cordis:memory-test-mcp-client'

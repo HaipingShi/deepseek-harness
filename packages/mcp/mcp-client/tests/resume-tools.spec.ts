@@ -8,7 +8,6 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import AgentLoop from '@deepseek-ai/dsh-agent-loop'
 import { mountAgentLoopTestDependencies } from '@deepseek-ai/dsh-agent-loop-testkit'
 import { createUserMessage, LlmAdapter } from '@deepseek-ai/dsh-llm'
-import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import JsonlSessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
 import * as McpClient from '@deepseek-ai/dsh-mcp-client'
@@ -48,7 +47,6 @@ function fixtureConfig(): Config {
 async function mountComposition(persistenceRoot: string, adapter: LlmAdapter): Promise<Context> {
   const ctx = new Context()
   await mountAgentLoopTestDependencies(ctx)
-  await ctx.plugin(SessionProjectionRegistry)
   await ctx.plugin(AgentLoop, { agents: [] })
   ctx.llm.registerAdapter(['mock'], adapter)
   await ctx.plugin(JsonlSessionPersistence, { root: persistenceRoot })

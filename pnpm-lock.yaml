@@ -7573,12 +7573,12 @@ importers:
       '@deepseek-ai/dsh-agent-loop-testkit':
         specifier: workspace:^
         version: link:../../test-support/agent-loop-testkit
-      '@deepseek-ai/dsh-code-runtime':
-        specifier: workspace:^
-        version: link:../../code-runtime/code-runtime
       '@deepseek-ai/dsh-llm':
         specifier: workspace:^
         version: link:../../llm/llm
+      '@deepseek-ai/dsh-ptc-runtime':
+        specifier: workspace:^
+        version: link:../../ptc-runtime/ptc-runtime
       '@deepseek-ai/dsh-session':
         specifier: workspace:^
         version: link:../../core/session

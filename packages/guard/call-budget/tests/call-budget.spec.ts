@@ -9,9 +9,8 @@ import type { Config } from '@deepseek-ai/dsh-call-budget'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import AgentLoop from '@deepseek-ai/dsh-agent-loop'
 import { mountAgentLoopTestDependencies } from '@deepseek-ai/dsh-agent-loop-testkit'
-import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
-import { CodeRuntime } from '@deepseek-ai/dsh-code-runtime'
-import type { CodeRunRequest, CodeRunResult } from '@deepseek-ai/dsh-code-runtime'
+import { PtcRuntime } from '@deepseek-ai/dsh-ptc-runtime'
+import type { PtcRunRequest, PtcRunResult } from '@deepseek-ai/dsh-ptc-runtime'
 import * as ToolCallBudget from '@deepseek-ai/dsh-call-budget'
 import { MockAdapter, textResponse, toolCallResponse } from '../../../core/agent-loop/tests/mock-adapter.ts'
 
@@ -24,13 +23,17 @@ import { MockAdapter, textResponse, toolCallResponse } from '../../../core/agent
  * shell).
  */
 
-/** A scriptable in-repo CodeRuntime (mirrors the PTC unit tier's fake runtime). */
-class FakeRuntime extends CodeRuntime {
+/** A scriptable in-repo PtcRuntime (mirrors the PTC unit tier's fake runtime). */
+class FakeRuntime extends PtcRuntime {
+  resolve(request: PtcRunRequest): import('@deepseek-ai/dsh-ptc-runtime').PtcRunSpec {
+    return { ...request, cwd: request.cwd ?? process.cwd(), timeoutMs: request.timeoutMs ?? 120_000 }
+  }
+
   readonly language = 'typescript'
   readonly isolation = 'fake'
-  behavior: (request: CodeRunRequest) => Promise<CodeRunResult> = () => Promise.resolve({ logs: [] })
+  behavior: (request: PtcRunRequest) => Promise<PtcRunResult> = () => Promise.resolve({ logs: [] })
 
-  run(request: CodeRunRequest): Promise<CodeRunResult> {
+  run(request: PtcRunRequest): Promise<PtcRunResult> {
     return this.behavior(request)
   }
 }
@@ -39,7 +42,6 @@ class FakeRuntime extends CodeRuntime {
 async function harness(config: Config, options: { tools?: { mode: 'ptc' | 'native' | 'both' } } = {}): Promise<Context> {
   const ctx = new Context()
   await mountAgentLoopTestDependencies(ctx, options.tools === undefined ? {} : { tools: options.tools })
-  await ctx.plugin(SessionProjectionRegistry)
   await ctx.plugin(AgentLoop, { agents: [] })
   await ctx.plugin(ToolCallBudget, config)
   if (options.tools !== undefined) await ctx.plugin(FakeRuntime)
@@ -233,11 +235,11 @@ describe('PTC nested sub-dispatches', () => {
         return [{ type: 'text', text: `probe ${nestedExecutions}` }]
       },
     }))
-    const ctxWithRuntime = ctx as Context & { codeRuntime: FakeRuntime }
+    const ctxWithRuntime = ctx as Context & { ptcRuntime: FakeRuntime }
     // The program issues three nested probe calls; the third crosses the
     // budget (outer run_code + two nested calls = 3), so it is denied and the
     // turn stops before any further sub-dispatch or model request.
-    ctxWithRuntime.codeRuntime.behavior = async (request: CodeRunRequest): Promise<CodeRunResult> => {
+    ctxWithRuntime.ptcRuntime.behavior = async (request: PtcRunRequest): Promise<PtcRunResult> => {
       const probe = request.bindings[0]!.functions.probe
       const outcomes: string[] = []
       for (let index = 0; index < 3; index++) {
@@ -266,7 +268,7 @@ describe('PTC nested sub-dispatches', () => {
     expect(pairs.calls).toBe(1)
     expect(pairs.results).toBe(1)
     expect(pairs.unpaired).toBe(0)
-    const dispatchStarts = eventsOf(agent).filter(event => event.type === 'tool/code-dispatch-start')
+    const dispatchStarts = eventsOf(agent).filter(event => event.type === 'tool/ptc-dispatch-start')
     expect(dispatchStarts).toHaveLength(3) // two executed + one denied, each logged
   }, 20_000)
 })

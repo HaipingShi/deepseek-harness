@@ -93,10 +93,10 @@ async function bootOverlay(file: string, override?: Record<string, unknown>): Pr
 async function bootOverlayDiagnostic(file: string): Promise<string> {
   const chunks: string[] = []
   const originalWrite = process.stderr.write.bind(process.stderr)
-  process.stderr.write = ((chunk: Uint8Array | string): boolean => {
+  process.stderr.write = (chunk: Uint8Array | string): boolean => {
     chunks.push(typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk))
     return originalWrite(chunk)
-  }) as typeof process.stderr.write
+  }
   try {
     const ctx = await bootOverlay(file)
     await ctx.fiber.dispose()
