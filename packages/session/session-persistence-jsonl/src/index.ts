@@ -30,7 +30,7 @@ import {
   type SessionPersistenceSnapshot, type SessionPersistenceStatOptions,
   type SessionPersistenceRevision as PersistenceRevision,
 } from '@deepseek-ai/dsh-session-persistence'
-import { JsonlBackendTracker, JsonlSessionHandle, type StorageHandleState } from './storage.ts'
+import { AppendRollbackError, JsonlBackendTracker, JsonlSessionHandle, type StorageHandleState } from './storage.ts'
 import { SessionWriteLease } from './lease.ts'
 import { SESSION_FORMAT_VERSION, SessionId as makeSessionId, SessionLogOffset } from '@deepseek-ai/dsh-session'
 import type { SessionEvent, SessionId, SessionHeader, SessionLogOffset as SessionLogOffsetType } from '@deepseek-ai/dsh-session'
@@ -1264,7 +1264,10 @@ class JsonlSessionPersistence extends SessionPersistence {
           await closeAppendHandle()
           await this.rollbackAppend(path, before)
         } catch (rollbackError) {
-          throw new AggregateError([error, rollbackError], `failed to roll back append to "${path}"`)
+          // The file is past its pre-append size by an unknown amount; the
+          // handle must refuse further appends instead of re-running the
+          // batch against unknown bytes.
+          throw new AppendRollbackError(path, error, rollbackError)
         }
         throw error
       }

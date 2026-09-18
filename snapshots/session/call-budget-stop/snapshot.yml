@@ -1,0 +1,8 @@
+version: 1
+scenario: call-budget-stop
+profile: headless
+composition: call-budget-stop
+recording: authored
+header:
+  class: call-budget-stop
+  pin: true

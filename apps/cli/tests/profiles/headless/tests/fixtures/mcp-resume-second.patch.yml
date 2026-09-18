@@ -1,0 +1,52 @@
+# Keyless two-process MCP resume scenario, process B: a brand-new DSH process
+# boots the SAME composition and RESUMES the session process A persisted. The
+# resumed turn's request must still carry the bridged fixture tools and a
+# fresh scripted tools/call must reach the new MCP server process.
+- id: headless-startup
+  disabled: true
+
+- id: headless-runner
+  disabled: true
+
+- id: llm-deepseek
+  disabled: true
+
+- id: agent-loop
+  config:
+    agents:
+      - id: main
+        provider: mcp-resume-mock
+        model: mcp-resume-mock
+        resumeSessionId: mcp-resume-process-a
+        cwd: !!js process.env.MCP_RESUME_ROOT
+
+- id: shell-env
+  config:
+    dshHome: !!js process.env.MCP_RESUME_ROOT + '/dsh-home'
+
+- id: agent-instructions
+  disabled: true
+
+- id: skill-filesystem
+  config:
+    dshHome: !!js process.env.MCP_RESUME_ROOT + '/dsh-home'
+    agentsHome: !!js process.env.MCP_RESUME_ROOT + '/agents-home'
+
+- id: session-persistence-jsonl
+  config:
+    root: !!js process.env.MCP_RESUME_ROOT + '/sessions'
+
+- insert:
+    - id: mcp-resume-mock-llm
+      name: './mcp-resume-mock-llm.ts'
+    - id: mcp-fixture
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: fixture
+        transport: stdio
+        command: !!js process.execPath
+        args:
+          - !!js process.env.MCP_FIXTURE_SERVER
+        env: {}
+        toolCallTimeoutMs: 15000
+        failOnStartupError: true

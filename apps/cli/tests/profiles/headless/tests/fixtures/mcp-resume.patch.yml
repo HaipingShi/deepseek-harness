@@ -1,0 +1,52 @@
+# Keyless two-process MCP resume scenario, process A: creates the session with
+# the MCP fixture server mounted. The mock model greets through the bridged
+# tool, so the persisted log proves discovery, request projection, and a real
+# tools/call round trip in a fresh DSH process.
+- id: headless-startup
+  disabled: true
+
+- id: headless-runner
+  disabled: true
+
+- id: llm-deepseek
+  disabled: true
+
+- id: agent-loop
+  config:
+    agents:
+      - id: main
+        provider: mcp-resume-mock
+        model: mcp-resume-mock
+        sessionId: mcp-resume-process-a
+        cwd: !!js process.env.MCP_RESUME_ROOT
+
+- id: shell-env
+  config:
+    dshHome: !!js process.env.MCP_RESUME_ROOT + '/dsh-home'
+
+- id: agent-instructions
+  disabled: true
+
+- id: skill-filesystem
+  config:
+    dshHome: !!js process.env.MCP_RESUME_ROOT + '/dsh-home'
+    agentsHome: !!js process.env.MCP_RESUME_ROOT + '/agents-home'
+
+- id: session-persistence-jsonl
+  config:
+    root: !!js process.env.MCP_RESUME_ROOT + '/sessions'
+
+- insert:
+    - id: mcp-resume-mock-llm
+      name: './mcp-resume-mock-llm.ts'
+    - id: mcp-fixture
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: fixture
+        transport: stdio
+        command: !!js process.execPath
+        args:
+          - !!js process.env.MCP_FIXTURE_SERVER
+        env: {}
+        toolCallTimeoutMs: 15000
+        failOnStartupError: true
