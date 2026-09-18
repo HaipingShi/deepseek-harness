@@ -21,6 +21,9 @@
     "!dist/preview.html",
     "!dist/preview"
   ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
   "scripts": {
     "build": "vite build",
     "dev": "vite",
