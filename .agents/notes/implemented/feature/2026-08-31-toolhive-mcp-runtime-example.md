@@ -12,7 +12,7 @@ DSH can connect directly to stdio and Streamable HTTP MCP servers, but it does n
 
 Ship one default-off ToolHive overlay under `apps/cli/config/examples/mcp-runtime`. It inserts the existing `@deepseek-ai/dsh-mcp-client`, reads one pre-existing ToolHive proxy URL from `DSH_TOOLHIVE_MCP_URL`, uses a stable `toolhive` namespace, sends no authorization header, and fails plugin activation when the endpoint or initial discovery fails. The [ToolHive guide](../../../../docs/user/guide/mcp-runtime.md) owns operator setup and the responsibility split.
 
-ToolHive owns registry resolution, workload execution, network and filesystem grants, secrets, tool filters, incoming authentication, and audit. DSH owns its MCP client connection, model-facing names, call lifecycle, and session records. Registry metadata is discovery input only; the operator approves the resolved package or image, version, provenance, permissions, credentials, destinations, and tools before launch.
+ToolHive owns registry resolution, workload execution, network and filesystem grants, secrets, tool filters, incoming authentication, and audit. DSH owns its MCP client connection, model-facing names, call lifecycle, and session records. Registry metadata is discovery input only; the operator approves the resolved package or image, version, digest and publisher, permissions, credentials, destinations, and tools before launch.
 
 ## Validation
 

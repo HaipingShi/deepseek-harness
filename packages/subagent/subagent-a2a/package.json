@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-subagent-a2a",
   "description": "Remote A2A subagent provider using the official JavaScript SDK",
-  "version": "0.1.2-rc.1",
+  "version": "0.1.6-alpha.2",
   "publishConfig": {
     "access": "public"
   },

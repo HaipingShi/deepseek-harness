@@ -70,7 +70,7 @@ The repository's keyless test checks the exact upstream pin and hardening flags,
 
 Playwright actions can submit forms, mutate remote state, download content, and expose page data to the model. Grant an origin only when the task authorizes those effects, and use a dedicated low-privilege account when authentication is required. Treat page text, accessibility snapshots, screenshots, downloads, console messages, and tool arguments as potentially sensitive session data.
 
-DSH owns MCP process lifecycle, model-facing tool registration, tool calls, and session logging. Playwright MCP owns browser automation and its request filtering. The operating environment owns executable provenance, browser installation, filesystem and network containment, credentials, and cleanup beyond the in-memory browser profile.
+DSH owns MCP process lifecycle, model-facing tool registration, tool calls, and session logging. Playwright MCP owns browser automation and its request filtering. The operating environment owns the executable's origin and integrity, browser installation, filesystem and network containment, credentials, and cleanup beyond the in-memory browser profile.
 
 -----
 

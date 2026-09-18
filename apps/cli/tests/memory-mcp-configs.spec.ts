@@ -176,28 +176,40 @@ describe('third-party memory MCP example overlays', () => {
     await waitForTool(ctx, `mcp__${contract.serverName}__greet`)
   }, 15_000)
 
-  it('rejects an absent or non-loopback Graphiti endpoint before connecting', async () => {
+  it('reports an absent or non-loopback Graphiti endpoint as an inactive entry without connecting', async () => {
     const file = resolve(exampleDir, 'graphiti.cordis.yml')
-    const rejectBoot = async (): Promise<void> => {
-      const patches = loadOverlayPatches('memory-mcp-config-test', file)
-      insertedRow(patches).name = 'cordis:memory-test-mcp-client'
-      await boot(
-        'memory-mcp-config-test',
-        baseConfig,
-        patches,
-        (ctx) => {
-          ctx.loader.builtins['memory-test-system-prompt'] = SystemPrompt
-          ctx.loader.builtins['memory-test-tools'] = ToolRuntime
-          ctx.loader.builtins['memory-test-mcp-client'] = McpClient
-        },
-      )
+    const bootDiagnostic = async (): Promise<string> => {
+      const chunks: string[] = []
+      const originalWrite = process.stderr.write.bind(process.stderr)
+      process.stderr.write = ((chunk: Uint8Array | string): boolean => {
+        chunks.push(typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk))
+        return originalWrite(chunk)
+      }) as typeof process.stderr.write
+      try {
+        const patches = loadOverlayPatches('memory-mcp-config-test', file)
+        insertedRow(patches).name = 'cordis:memory-test-mcp-client'
+        const ctx = await boot(
+          'memory-mcp-config-test',
+          baseConfig,
+          patches,
+          (ctx) => {
+            ctx.loader.builtins['memory-test-system-prompt'] = SystemPrompt
+            ctx.loader.builtins['memory-test-tools'] = ToolRuntime
+            ctx.loader.builtins['memory-test-mcp-client'] = McpClient
+          },
+        )
+        await ctx.fiber.dispose()
+      } finally {
+        process.stderr.write = originalWrite
+      }
+      return chunks.join('')
     }
 
     delete process.env.DSH_GRAPHITI_MCP_URL
-    await expect(rejectBoot()).rejects.toThrow('DSH_GRAPHITI_MCP_URL is required')
+    await expect(bootDiagnostic()).resolves.toContain('DSH_GRAPHITI_MCP_URL is required')
 
     process.env.DSH_GRAPHITI_MCP_URL = 'https://memory.example.com/mcp/'
-    await expect(rejectBoot()).rejects.toThrow('must use HTTP on a loopback host')
+    await expect(bootDiagnostic()).resolves.toContain('must use HTTP on a loopback host')
   })
 
   it('connects the checked-in Graphiti HTTP transport to a keyless fixture', async () => {

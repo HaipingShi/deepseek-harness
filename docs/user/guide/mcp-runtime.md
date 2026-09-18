@@ -28,7 +28,7 @@ thv run <server> --name dsh-<server> --tools <tool-a>,<tool-b> --enable-audit
 thv list --format json
 ```
 
-The official MCP Registry and a ToolHive registry are discovery inputs. Review the resolved package or image identity, version, digest or provenance, requested secrets, filesystem mounts, network destinations, and tool list. Do not treat a registry entry or popularity count as an execution approval.
+The official MCP Registry and a ToolHive registry are discovery inputs. Review the resolved package or image identity, version, digest and publisher, requested secrets, filesystem mounts, network destinations, and tool list. Do not treat a registry entry or popularity count as an execution approval.
 
 <a id="connect-dsh"></a>
 ## Connect DSH

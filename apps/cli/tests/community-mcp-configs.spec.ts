@@ -86,6 +86,26 @@ async function bootOverlay(file: string, override?: Record<string, unknown>): Pr
   return ctx
 }
 
+/** Boot one overlay, capture stderr startup diagnostics, and dispose the tree.
+ * @param file - overlay path handed to {@link bootOverlay}.
+ * @returns every stderr chunk written while the composition started.
+ */
+async function bootOverlayDiagnostic(file: string): Promise<string> {
+  const chunks: string[] = []
+  const originalWrite = process.stderr.write.bind(process.stderr)
+  process.stderr.write = ((chunk: Uint8Array | string): boolean => {
+    chunks.push(typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk))
+    return originalWrite(chunk)
+  }) as typeof process.stderr.write
+  try {
+    const ctx = await bootOverlay(file)
+    await ctx.fiber.dispose()
+  } finally {
+    process.stderr.write = originalWrite
+  }
+  return chunks.join('')
+}
+
 describe('ToolHive MCP example overlay', () => {
   it('pins the reviewed ToolHive contract and fails loud at startup', () => {
     process.env.DSH_TOOLHIVE_MCP_URL = 'http://127.0.0.1:43123/mcp'
@@ -105,9 +125,11 @@ describe('ToolHive MCP example overlay', () => {
     expect(source).not.toMatch(/(?:api[_-]?key|password|secret|bearer)\s*[:=]\s*[^\s$]/i)
   })
 
-  it('rejects an unset ToolHive endpoint before any connection attempt', async () => {
+  it('reports an unset ToolHive endpoint as an inactive entry without connecting', async () => {
     delete process.env.DSH_TOOLHIVE_MCP_URL
-    await expect(bootOverlay(toolHiveOverlay)).rejects.toThrow()
+    const diagnostic = await bootOverlayDiagnostic(toolHiveOverlay)
+    expect(diagnostic).toContain('mcp-toolhive')
+    expect(diagnostic).toContain('did not activate')
   })
 
   it('loads through the real Loader and discovers a keyless HTTP fixture tool', async () => {
@@ -149,9 +171,11 @@ describe('Playwright MCP browser example overlay', () => {
     expect(source).not.toMatch(/(?:api[_-]?key|password|secret|bearer)\s*[:=]\s*[^\s$]/i)
   })
 
-  it('rejects an unset browser origin allowlist before starting Playwright', async () => {
+  it('reports an unset browser origin allowlist as an inactive entry without starting Playwright', async () => {
     delete process.env.DSH_PLAYWRIGHT_ALLOWED_ORIGINS
-    await expect(bootOverlay(playwrightOverlay)).rejects.toThrow()
+    const diagnostic = await bootOverlayDiagnostic(playwrightOverlay)
+    expect(diagnostic).toContain('mcp-playwright')
+    expect(diagnostic).toContain('did not activate')
   })
 
   it('loads through the real Loader and discovers a keyless stdio fixture tool', async () => {
@@ -199,9 +223,11 @@ describe('Microsandbox MCP microVM example overlay', () => {
     expect(source).not.toMatch(/MSB_(?:API_KEY|PROFILE)|unrestricted/)
   })
 
-  it('rejects an unset host-path allowlist before starting Microsandbox', async () => {
+  it('reports an unset host-path allowlist as an inactive entry without starting Microsandbox', async () => {
     delete process.env.DSH_MICROSANDBOX_HOST_PATHS
-    await expect(bootOverlay(microsandboxOverlay)).rejects.toThrow()
+    const diagnostic = await bootOverlayDiagnostic(microsandboxOverlay)
+    expect(diagnostic).toContain('mcp-microsandbox')
+    expect(diagnostic).toContain('did not activate')
   })
 
   it('loads through the real Loader and discovers a keyless stdio fixture tool', async () => {

@@ -70,7 +70,7 @@ The repository's keyless test checks the exact upstream pin and safety environme
 
 Enabling this server registers its complete discovered MCP namespace. That namespace can include runtime installation, sandbox and shell lifecycle, command execution, host copy, mounts, volumes, images, snapshots, SSH, and SFTP. The upstream dangerous-tools switch is one guard, not a complete DSH authorization policy. Use a dedicated agent profile and `ctx.tools.restrict()` or a `tools/pre-execute` policy when the model should receive only a reviewed subset; require human approval for state-changing or host-crossing operations.
 
-MicroVM isolation separates guest workloads from the host more strongly than the in-process DSH sandbox policy, but it does not constrain DSH itself, the MCP process, allowed host paths, image provenance, network egress, credentials, or upstream implementation defects. DSH owns MCP process lifecycle, tool naming, calls, and session logging. Microsandbox owns the microVM runtime and its MCP operations. The operator owns host prerequisites, binary and image provenance, tool authorization, paths, network policy, capacity, cleanup, and any cloud credentials.
+MicroVM isolation separates guest workloads from the host more strongly than the in-process DSH sandbox policy, but it does not constrain DSH itself, the MCP process, allowed host paths, image source and digest, network egress, credentials, or upstream implementation defects. DSH owns MCP process lifecycle, tool naming, calls, and session logging. Microsandbox owns the microVM runtime and its MCP operations. The operator owns host prerequisites, binary and image sources and digests, tool authorization, paths, network policy, capacity, cleanup, and any cloud credentials.
 
 -----
 

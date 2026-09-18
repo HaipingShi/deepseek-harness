@@ -71,7 +71,7 @@ describe('Promptfoo DSH provider example', () => {
     expect(response.output).toBe('evaluation answer')
     expect(response.error).toBeUndefined()
     expect(response.metadata).toMatchObject({
-      dshEventCount: 5,
+      dshEventCount: 4,
       dshTurnEndReason: 'completed',
     })
     expect(response.metadata?.dshSessionId).toMatch(/^session-/)

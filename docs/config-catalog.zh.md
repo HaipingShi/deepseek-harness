@@ -2676,6 +2676,30 @@ export interface Config {
 
 来源： [`packages/subagent/subagent/src/index.ts:190`](../packages/subagent/subagent/src/index.ts)
 
+<a id="deepseek-aidsh-subagent-a2a"></a>
+
+## `@deepseek-ai/dsh-subagent-a2a`
+
+需要：`subagents`
+
+```ts config-catalog
+/** Connection settings for one remote A2A agent. */
+export interface Config {
+  /** Provider name on `ctx.subagents` (default `a2a`). */
+  providerName: string
+  /** Absolute HTTP(S) base URL used to discover the remote Agent Card. */
+  agentUrl: string
+  /** Agent Card path relative to `agentUrl` (default `/.well-known/agent-card.json`). */
+  agentCardPath: string
+  /** Additional absolute origins allowed for Agent Card-declared interfaces. */
+  allowedOrigins: string[]
+  /** Explicit HTTP headers sent to Agent Card and message endpoints. */
+  headers: Record<string, string>
+}
+```
+
+来源： [`packages/subagent/subagent-a2a/src/index.ts:41`](../packages/subagent/subagent-a2a/src/index.ts)
+
 <a id="deepseek-aidsh-subagent-acp"></a>
 
 ## `@deepseek-ai/dsh-subagent-acp`
@@ -3593,7 +3617,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/bundle/web-app/src/index.ts:44`](../packages/bundle/web-app/src/index.ts)
+来源：[`packages/bundle/web-app/src/index.ts:50`](../packages/bundle/web-app/src/index.ts)
 
 <a id="deepseek-aidsh-web-fetch-http"></a>
 

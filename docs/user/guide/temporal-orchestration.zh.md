@@ -108,7 +108,7 @@ DSH 负责 Agent runtime、模型路由、工具、会话日志和子进程清�
 - [Temporal Workflow](../../../packages/sdk/client/examples/temporal-workflow.mjs) — 禁用重试的确定性代理调用。
 - [Temporal Worker](../../../packages/sdk/client/examples/temporal-worker.mjs) — task queue 与 Worker 组装。
 - [TypeScript SDK](../../../packages/sdk/client/README.zh.md) — 运行、结果、超时和清理语义。
-- [内置 workflow engine](../../../packages/workflow/workflow-worker-thread/README.zh.md) — Harness 内实时编排及其限制。
+- [内置 workflow engine](../../../packages/workflow/workflow-ptc/README.zh.md) — Harness 内实时编排及其限制。
 - [Temporal TypeScript SDK](https://docs.temporal.io/develop/typescript) — 上游部署与持久性指南。
 
 <a id="dev-note"></a>

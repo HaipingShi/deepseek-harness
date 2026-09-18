@@ -4,7 +4,7 @@
 
 - Repository: `/Users/geesh/AI/deepseek-harness`
 - Branch: `codex/community-integrations`
-- Base HEAD: `430aea34869c662e262ca44b8edc9552466d5efb`
+- Base HEAD: `430aea` (six-digit prefix of the `codex/community-integrations` commit named above; full hashes are not recorded in maintained files)
 - Window: `2026-08-31T07:39:20Z` through `2026-08-31T08:36:59Z`
 - Host: macOS 26.5.2 (25F84), arm64; Node 24.8.0; pnpm 11.7.0; Docker 28.4.0
 - Policy: proceed from keyless/read-only checks to isolated local state, local services, and finally credentialed external calls. No secret value was printed or retained.

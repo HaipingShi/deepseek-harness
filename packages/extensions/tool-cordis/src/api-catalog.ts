@@ -772,6 +772,17 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'baseUrl', description: 'clean canonical browser origin.' }],
         returns: 'root URL accepted by {@link authorizeIndex} for initial login.',
       },
+      {
+        signature: 'issueBrowserHandoff(baseUrl: string, ttlMilliseconds: number): string',
+        description: 'Mint one short-lived, single-use browser authentication URL.',
+        parameters: [{ name: 'baseUrl', description: 'clean canonical browser origin.' }, { name: 'ttlMilliseconds', description: 'capability lifetime in milliseconds.' }],
+        returns: 'root URL accepted once by {@link authorizeIndex} before expiry.',
+      },
+      {
+        signature: 'invalidateBrowserHandoffs(): void',
+        description: 'Invalidate every outstanding browser handoff URL.',
+        parameters: [],
+      },
     ],
   },
   {

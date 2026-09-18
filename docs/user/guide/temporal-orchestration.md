@@ -108,7 +108,7 @@ DSH owns the agent runtime, model route, tools, session log, and subprocess clea
 - [Temporal Workflow](../../../packages/sdk/client/examples/temporal-workflow.mjs) — deterministic proxy call with retries disabled.
 - [Temporal Worker](../../../packages/sdk/client/examples/temporal-worker.mjs) — task queue and Worker assembly.
 - [TypeScript SDK](../../../packages/sdk/client/README.md) — run, result, timeout, and cleanup semantics.
-- [Built-in workflow engine](../../../packages/workflow/workflow-worker-thread/README.md) — live in-Harness orchestration and its containment limits.
+- [Built-in workflow engine](../../../packages/workflow/workflow-ptc/README.md) — live in-Harness orchestration and its containment limits.
 - [Temporal TypeScript SDK](https://docs.temporal.io/develop/typescript) — upstream deployment and durability guidance.
 
 <a id="dev-note"></a>
