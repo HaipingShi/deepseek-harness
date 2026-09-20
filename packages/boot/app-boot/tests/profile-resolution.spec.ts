@@ -201,6 +201,17 @@ describe('profile resolution generation', { concurrent: false }, () => {
       .toEqual({ marker: 1 })
   })
 
+  it('canonicalizes declarers selected through a symlinked installation anchor', async () => {
+    const f = fixture()
+    const alias = join(f.root, 'install-alias')
+    symlinkSync(join(f.root, 'install'), alias, process.platform === 'win32' ? 'junction' : 'dir')
+    const generation = await healProfilesModuleFallback({
+      installAnchor: join(alias, 'package.json'), profile: f.profile, home: f.root, materialize: false,
+    })
+    expect(generation.entries.find(entry => entry.name === 'resolution-lib')?.declarer)
+      .toBe(realpathSync(f.installAnchor))
+  })
+
   it('fails generation construction before writing when the profile manifest is malformed', async () => {
     const f = fixture()
     file(join(f.profile.dir, 'package.json'), '{')

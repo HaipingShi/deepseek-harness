@@ -476,7 +476,11 @@ function resolveModuleFallbackEntries(
   declarers: ReadonlyMap<string, string>
   versions: ReadonlyMap<string, string | undefined>
 } {
-  const appManifest = readModuleFallbackManifest(installAnchor)
+  // Node resolves symlinked package imports to their real module path. Keep
+  // the dependency declarers on that same spelling so tsx and the runtime
+  // resolver cannot load one package through both its link and real paths.
+  const canonicalInstallAnchor = join(realModuleDirectory(dirname(installAnchor)), basename(installAnchor))
+  const appManifest = readModuleFallbackManifest(canonicalInstallAnchor)
   const links = new Map<string, string>()
   const declarers = new Map<string, string>()
   const versions = new Map<string, string | undefined>()
@@ -488,7 +492,7 @@ function resolveModuleFallbackEntries(
   }
   // BFS over the resolvable dependency graph; the visited set is the link
   // map itself (first resolution wins, matching Node's own nearest-wins).
-  const queue: { anchor: string; manifest: ProfileManifest }[] = [{ anchor: installAnchor, manifest: appManifest }]
+  const queue: { anchor: string; manifest: ProfileManifest }[] = [{ anchor: canonicalInstallAnchor, manifest: appManifest }]
   for (let next = queue.shift(); next !== undefined; next = queue.shift()) {
     // Peer dependencies participate: Service Definition packages (dsh-subprocess,
     // dsh-compaction, ...) are peers of their implementations, never plain
