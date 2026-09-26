@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-toolhive-mcp-runtime-example.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-toolhive-mcp-runtime-example.md
-2026-08-31-toolhive-mcp-runtime-example.md: bea35798464935b035709972a855fd0bcd25e965
-2026-08-31-toolhive-mcp-runtime-example.zh.md: 70568ddd2d3b2f525f64996d19a5cac72d744f9e
+/agent-note-toolhive-mcp-runtime-example:
+  en: 150b4044b221b75f
+  zh: bbe50938b8f36db3
+/agent-note-toolhive-mcp-runtime-example/problem:
+  en: 034ad20c52ec89a2
+  zh: 714f3da238dc7b34
+/agent-note-toolhive-mcp-runtime-example/decision:
+  en: 6b47ae366272b757
+  zh: a13f020d13322dae
+/agent-note-toolhive-mcp-runtime-example/validation:
+  en: 116b215ce16e8b80
+  zh: 9c4a4f613975a6f1
+/agent-note-toolhive-mcp-runtime-example/alternatives-considered:
+  en: b121e528c572a2c0
+  zh: 921d74edb1792e03
+/agent-note-toolhive-mcp-runtime-example/consequences:
+  en: 206e8266c842055c
+  zh: 020b542723455a81

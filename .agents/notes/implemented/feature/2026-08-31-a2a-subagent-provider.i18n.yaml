@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-a2a-subagent-provider.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-a2a-subagent-provider.md
-2026-08-31-a2a-subagent-provider.md: c4a499877860f4231bd4e23f74c83f27a4ac8b3d
-2026-08-31-a2a-subagent-provider.zh.md: 6a7749b5dd1aad1c7ce2d3924784d456c889b2d1
+/agent-note-a2a-subagent-provider:
+  en: 424f076a012d9fbb
+  zh: 22670665cfead553
+/agent-note-a2a-subagent-provider/problem:
+  en: 7c4e052b1393b887
+  zh: b190b318053d37f9
+/agent-note-a2a-subagent-provider/decision:
+  en: d701ec127c900b2b
+  zh: 191fa0736d5dc20a
+/agent-note-a2a-subagent-provider/validation:
+  en: d05c013e16cb29e8
+  zh: 7dee7094fb269259
+/agent-note-a2a-subagent-provider/alternatives-considered:
+  en: f2c4f8d32ae463ce
+  zh: a21b645ff362a866
+/agent-note-a2a-subagent-provider/consequences:
+  en: cdd90d68267c3945
+  zh: c786f0f07b7534d6

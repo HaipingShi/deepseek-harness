@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-08-call-budget.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-08-call-budget.md
-2026-09-08-call-budget.md: 0fcd5624f1810122ba45dc60166110ba3dbc16f8
-2026-09-08-call-budget.zh.md: 8905639f31619b46659b5850347d367f92fa6c12
+/agent-note-tool-call-budget-guard:
+  en: d7d06bb3d337fc33
+  zh: 46653b3048c6858f
+/agent-note-tool-call-budget-guard/problem:
+  en: 710183a9315d7d64
+  zh: 5261fe83709beb81
+/agent-note-tool-call-budget-guard/decision:
+  en: 0e637edff6e47e49
+  zh: c9e8e4c8d72e20c1
+/agent-note-tool-call-budget-guard/alternatives-considered:
+  en: 26961c239685937e
+  zh: ed762e26150de9c8
+/agent-note-tool-call-budget-guard/consequences:
+  en: 0ebc9943af37fdf9
+  zh: dd9eb59bd73bb4d6
+/agent-note-tool-call-budget-guard/testing:
+  en: f4e835485c2ea20f
+  zh: 40fee3de84fa0a69

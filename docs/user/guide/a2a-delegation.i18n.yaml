@@ -1,6 +1,28 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for a2a-delegation.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/user/guide/a2a-delegation.md
-a2a-delegation.md: f274525f2df30580d0217cdd6311ba127670824d
-a2a-delegation.zh.md: d98f2dd655dc2230aa5687f9c8f4a6b604f31627
+/delegate-to-an-a2a-agent:
+  en: 39daf96720bdd7d7
+  zh: d77b8c700cf5b323
+/delegate-to-an-a2a-agent/summary:
+  en: bb27db379db521e3
+  zh: 8a90c528d630df0c
+/delegate-to-an-a2a-agent/table-of-contents:
+  en: 26bb0b0171d5ca58
+  zh: a36978e637bcefad
+/delegate-to-an-a2a-agent/review-the-destination:
+  en: b10afcc09c344782
+  zh: 7f31a24c185bc2d6
+/delegate-to-an-a2a-agent/enable-the-provider:
+  en: ac4532445e21242f
+  zh: 44ea1721c81ace1e
+/delegate-to-an-a2a-agent/verify-a-deployment:
+  en: abcaa03d11ecb2fd
+  zh: b16b4915cde89ebe
+/delegate-to-an-a2a-agent/operational-limits:
+  en: bf22f095e902261e
+  zh: af8bda5525126c9f
+/delegate-to-an-a2a-agent/further-exploration:
+  en: 0db74abee484191d
+  zh: cabd6a859ae35ea7

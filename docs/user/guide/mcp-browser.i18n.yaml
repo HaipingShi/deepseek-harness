@@ -1,6 +1,34 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for mcp-browser.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/user/guide/mcp-browser.md
-mcp-browser.md: 02853ff0b9fa941e79b3e42b748014eee050109d
-mcp-browser.zh.md: eacc61a621e545f7be9e27b2904a9375d3f8cd61
+/run-an-isolated-browser-through-playwright-mcp:
+  en: a8e55891534f8eaa
+  zh: 5ee98911378ef6af
+/run-an-isolated-browser-through-playwright-mcp/summary:
+  en: 47de9834b3ac2aff
+  zh: b392a4233bfe504a
+/run-an-isolated-browser-through-playwright-mcp/table-of-contents:
+  en: a1c88fa47310c7f7
+  zh: 453b9ca2196c1aa5
+/run-an-isolated-browser-through-playwright-mcp/install-the-reviewed-executable:
+  en: ca455bf6f9ff5daa
+  zh: 258b6990840e25d7
+/run-an-isolated-browser-through-playwright-mcp/choose-allowed-origins:
+  en: b838c6405521ef44
+  zh: 6c3eb35a5324634b
+/run-an-isolated-browser-through-playwright-mcp/start-dsh:
+  en: 9d670507768faa49
+  zh: c20e6ca9dcb7e536
+/run-an-isolated-browser-through-playwright-mcp/verify-the-integration:
+  en: 74d245613a825674
+  zh: 3ad3068d8cffa390
+/run-an-isolated-browser-through-playwright-mcp/security-and-ownership:
+  en: d48ccfc8d588ef04
+  zh: 9ff509af392d5e5e
+/run-an-isolated-browser-through-playwright-mcp/further-exploration:
+  en: afef6df2f8f2bc3a
+  zh: e63d8f0fb65b75de
+/run-an-isolated-browser-through-playwright-mcp/dev-note:
+  en: 17d63b4e87afdca2
+  zh: f18f21f5b425b842

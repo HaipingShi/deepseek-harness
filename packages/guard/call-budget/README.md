@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-An agent that cannot reach its goal can keep calling tools forever — retrying a failing command, or running one variant of a command after another — and no reminder helps when every call is different. `dsh-call-budget` bounds that failure by count: you configure a maximum number of tool calls per budget window: calls that fit the cap execute normally, and the first attempted call beyond it is denied while the guard cancels the turn. The limit is a cost control, not a progress judge: it cannot tell useful work from a loop, so caps belong on deployments that know their normal call volume. The guard ships nothing enabled; mounting the plugin with at least one limit is the entire opt-in.
+An agent that cannot reach its goal can keep calling tools forever — retrying a failing command, or running one variant after another — and no reminder helps when every call is different. `dsh-call-budget` bounds that failure by count: a maximum number of tool calls per budget window; calls within the cap run normally, and the first beyond it is denied while the guard cancels the turn. The limit is a cost control, not a progress judge, so caps belong on deployments with known call volume. The guard ships nothing enabled; mounting it with one limit is the opt-in.
 
 ## Table of Contents
 

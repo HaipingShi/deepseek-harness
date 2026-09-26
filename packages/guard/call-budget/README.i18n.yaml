@@ -1,6 +1,70 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/guard/call-budget/README.md
-README.md: 3c8e2579bb64243165419cc453219d8af23f9093
-README.zh.md: 7ed3188f1df8baa00e7d5e5531e2cbcae9c4f634
+/:
+  en: c437e0d13d354aca
+  zh: f6795751aa6e8045
+/deepseek-ai-dsh-call-budget:
+  en: 3dbf7d384388086c
+  zh: ce7ef1d872bcdbf7
+/deepseek-ai-dsh-call-budget/summary:
+  en: e766e23e4b50a957
+  zh: d9909d4f28edd644
+/deepseek-ai-dsh-call-budget/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: ffab54373e9e61f0
+/deepseek-ai-dsh-call-budget/use-this-package:
+  en: 7b0731bf282ff832
+  zh: 149037b9e55b1c92
+/deepseek-ai-dsh-call-budget/use-this-package/when-to-choose-it:
+  en: 042ff90372236c5d
+  zh: 6598d0c0c8237b75
+/deepseek-ai-dsh-call-budget/use-this-package/minimal-configuration:
+  en: 9310ccc5f51e0318
+  zh: 305ad6983a5e5c3b
+/deepseek-ai-dsh-call-budget/use-this-package/the-budget-window:
+  en: 10fce50a230f1ac1
+  zh: 54fc9040318f5021
+/deepseek-ai-dsh-call-budget/use-this-package/what-happens-at-the-cap:
+  en: c55c711f7ca5ef78
+  zh: 1aa32d5578cca637
+/deepseek-ai-dsh-call-budget/understand-the-implementation:
+  en: 764a032c4724990e
+  zh: dc6af788a236929f
+/deepseek-ai-dsh-call-budget/understand-the-implementation/design-philosophy:
+  en: 729293be895009b0
+  zh: 6e13e5460c3cdd2d
+/deepseek-ai-dsh-call-budget/understand-the-implementation/what-counts:
+  en: 9ffcd310a8e403b8
+  zh: 297938c4334b14cb
+/deepseek-ai-dsh-call-budget/understand-the-implementation/source-map:
+  en: 05664ab5aaefe252
+  zh: 9a1d8b232153b35e
+/deepseek-ai-dsh-call-budget/further-exploration:
+  en: 1f063706d2f22f93
+  zh: d9a1b3dccf456761
+/deepseek-ai-dsh-call-budget/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-call-budget/model-experience/denied-call-at-the-cap:
+  en: 62dde6df078011b2
+  zh: 62dde6df078011b2
+/deepseek-ai-dsh-call-budget/model-experience/denied-call-at-the-cap/what-the-model-sees:
+  en: c05cbeb90386e566
+  zh: fae4acba0bbedbe5
+/deepseek-ai-dsh-call-budget/model-experience/denied-call-at-the-cap/what-the-model-sees/denial-result-text:
+  en: 249e44eb2e7acd97
+  zh: 249e44eb2e7acd97
+/deepseek-ai-dsh-call-budget/model-experience/denied-call-at-the-cap/token-effect:
+  en: 600eb48dc739c31b
+  zh: ec321c6f69c8407d
+/deepseek-ai-dsh-call-budget/model-experience/denied-call-at-the-cap/kv-cache-effect:
+  en: 60a8120e4f9ed3b5
+  zh: d6d0f4e105275563
+/deepseek-ai-dsh-call-budget/known-limitations-and-deferred-work:
+  en: de18332b206b4960
+  zh: 68054e41d9c3e0e7
+/deepseek-ai-dsh-call-budget/known-limitations-and-deferred-work/dev-note:
+  en: 6d4111a68472cacb
+  zh: 0cc90553388008c2

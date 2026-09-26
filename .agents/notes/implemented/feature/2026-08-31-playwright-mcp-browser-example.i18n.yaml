@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-playwright-mcp-browser-example.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-playwright-mcp-browser-example.md
-2026-08-31-playwright-mcp-browser-example.md: e25fedc2363e50dc5980d996b67a68a43f5eb9e0
-2026-08-31-playwright-mcp-browser-example.zh.md: 0b7cdeef4bdce1ff73b8149a0d992dbd8afca7a7
+/agent-note-playwright-mcp-browser-example:
+  en: 9388aa200341a96d
+  zh: 76df58f531282ba1
+/agent-note-playwright-mcp-browser-example/problem:
+  en: 737b093d586a103e
+  zh: c10e651078007c8c
+/agent-note-playwright-mcp-browser-example/decision:
+  en: 536dc91dbaf884c2
+  zh: 53cb44d0c57137ae
+/agent-note-playwright-mcp-browser-example/validation:
+  en: 7329c609bcad94bb
+  zh: 583de8dda46b5673
+/agent-note-playwright-mcp-browser-example/alternatives-considered:
+  en: 7620f99812d8977d
+  zh: adf583243623f733
+/agent-note-playwright-mcp-browser-example/consequences:
+  en: e899c71dded4de2e
+  zh: 3c17571a167f949c

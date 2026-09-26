@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-markdown-wrap-symlink-glob.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-08-31-markdown-wrap-symlink-glob.md
-2026-08-31-markdown-wrap-symlink-glob.md: 3631f80de36db90f9ba7eddba21221ab3654f0ec
-2026-08-31-markdown-wrap-symlink-glob.zh.md: f8db24a637cb8658c7372031be506015eb0e04cd
+/agent-note-markdown-wrap-symlink-glob:
+  en: ef3db99fafceea03
+  zh: 4a4ff3e48dd626d5
+/agent-note-markdown-wrap-symlink-glob/problem:
+  en: a42de7387b76e435
+  zh: 8ff27cf4bb83e214
+/agent-note-markdown-wrap-symlink-glob/decision:
+  en: 29416309303a2bc6
+  zh: aa004dc4f080c925
+/agent-note-markdown-wrap-symlink-glob/alternatives-considered:
+  en: afda781bab20453a
+  zh: b06c7f79a018c89b
+/agent-note-markdown-wrap-symlink-glob/consequences:
+  en: 534b8e05ba2ea6d4
+  zh: 5e843f0b2ba6580f

@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-microsandbox-mcp-runtime-example.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-microsandbox-mcp-runtime-example.md
-2026-08-31-microsandbox-mcp-runtime-example.md: bac5194051acea87f928428c8d8b3f68e75deb0c
-2026-08-31-microsandbox-mcp-runtime-example.zh.md: 5a21c07073132ac8d602f21b1991df381cd77e7f
+/agent-note-microsandbox-mcp-runtime-example:
+  en: af6a1b946edcecbf
+  zh: 682139f1860901b6
+/agent-note-microsandbox-mcp-runtime-example/problem:
+  en: 83d79e0c15754262
+  zh: d251d01a5e097017
+/agent-note-microsandbox-mcp-runtime-example/decision:
+  en: 007f63ec2fb4fb2e
+  zh: b00708233b76ef83
+/agent-note-microsandbox-mcp-runtime-example/validation:
+  en: 1f60040a7419f324
+  zh: c4bcb50859d31bfc
+/agent-note-microsandbox-mcp-runtime-example/alternatives-considered:
+  en: 48d0fc5f7bd1b9a7
+  zh: a05aa1e0d404f6d9
+/agent-note-microsandbox-mcp-runtime-example/consequences:
+  en: 74f4b8cf7573e382
+  zh: cf65ef47420bf18d

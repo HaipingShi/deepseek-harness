@@ -1,6 +1,37 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for temporal-orchestration.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/user/guide/temporal-orchestration.md
-temporal-orchestration.md: be4c42592783ac7fe99eea32badbec417220b907
-temporal-orchestration.zh.md: fd1322264a6e713b751bd57067abdb87b8ec0851
+/orchestrate-dsh-tasks-with-temporal:
+  en: 25368f9a5229978c
+  zh: 658fc30b24abe962
+/orchestrate-dsh-tasks-with-temporal/summary:
+  en: e637d5b190ffa487
+  zh: 2583d15a3821325c
+/orchestrate-dsh-tasks-with-temporal/table-of-contents:
+  en: 478ceb9c6a436042
+  zh: 6cd34f80d769b3f2
+/orchestrate-dsh-tasks-with-temporal/prepare-an-integration-project:
+  en: 6b68bb94b97c3d3b
+  zh: 55c30244dca6aff3
+/orchestrate-dsh-tasks-with-temporal/run-the-worker:
+  en: 876a5fa15af94b95
+  zh: 66c55baa21373086
+/orchestrate-dsh-tasks-with-temporal/start-a-workflow:
+  en: ae3a22bf3d4b95c9
+  zh: 32e077a7aca113bc
+/orchestrate-dsh-tasks-with-temporal/cancellation-and-retries:
+  en: 3690bb3cc89378b4
+  zh: 13f24e5d4eb73a7a
+/orchestrate-dsh-tasks-with-temporal/verify-the-integration:
+  en: 209afd3729114e5d
+  zh: 39dde744ca24481e
+/orchestrate-dsh-tasks-with-temporal/security-and-ownership:
+  en: 292ae7d40ec884de
+  zh: ad2214dbd0a9d0db
+/orchestrate-dsh-tasks-with-temporal/further-exploration:
+  en: 800735e64b45c55c
+  zh: 91fb76b64c40f565
+/orchestrate-dsh-tasks-with-temporal/dev-note:
+  en: 87df1f6644c658df
+  zh: 81854f944afd7d57

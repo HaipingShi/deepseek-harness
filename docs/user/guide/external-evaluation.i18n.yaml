@@ -1,6 +1,34 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for external-evaluation.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/user/guide/external-evaluation.md
-external-evaluation.md: 31ed58c585e51807c034ece0b3db34f214f2dbc5
-external-evaluation.zh.md: e44d3fcc6275caaa5c4a81e4af939f34e40db889
+/evaluate-dsh-with-promptfoo-or-inspect:
+  en: 3567e61d23643830
+  zh: 86a5b27cfaf04a94
+/evaluate-dsh-with-promptfoo-or-inspect/summary:
+  en: 65eda9e198a3c7b6
+  zh: aa7d03f2a92dc7dc
+/evaluate-dsh-with-promptfoo-or-inspect/table-of-contents:
+  en: ebbad7a90be95f97
+  zh: 049d6d670811c08e
+/evaluate-dsh-with-promptfoo-or-inspect/prepare-an-evaluation-home:
+  en: 00367bf172cb9e4b
+  zh: fc314ddfb1885b23
+/evaluate-dsh-with-promptfoo-or-inspect/run-promptfoo:
+  en: 4bb2d66b36afc537
+  zh: 8537e0f62314212d
+/evaluate-dsh-with-promptfoo-or-inspect/run-inspect:
+  en: 8e9ad4169fadd919
+  zh: 17768af8227cb224
+/evaluate-dsh-with-promptfoo-or-inspect/interpret-evidence:
+  en: 21313566a5ce5ba4
+  zh: e64119c9d00cebad
+/evaluate-dsh-with-promptfoo-or-inspect/security-and-limitations:
+  en: e7f2ae4ff8701e35
+  zh: 394ff525d876e7dd
+/evaluate-dsh-with-promptfoo-or-inspect/further-exploration:
+  en: 6e852c4ff50fceee
+  zh: b5e8fb57436a4f52
+/evaluate-dsh-with-promptfoo-or-inspect/dev-note:
+  en: 5ae82f938665eac8
+  zh: f412a9ae7e30fdef

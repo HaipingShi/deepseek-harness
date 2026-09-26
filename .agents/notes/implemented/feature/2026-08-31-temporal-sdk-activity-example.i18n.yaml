@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-temporal-sdk-activity-example.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-temporal-sdk-activity-example.md
-2026-08-31-temporal-sdk-activity-example.md: 25d37d12fc7391a171c309924c0520f8c7e2822a
-2026-08-31-temporal-sdk-activity-example.zh.md: 862d5856bbb417d3b5b8b3fd9e72b582be2d3b5a
+/agent-note-temporal-sdk-activity-example:
+  en: 3df0ec18e5736bcd
+  zh: 6718020389da1c1a
+/agent-note-temporal-sdk-activity-example/problem:
+  en: 0ac58f32c81cd8e4
+  zh: 4b90bcc3134acb82
+/agent-note-temporal-sdk-activity-example/decision:
+  en: f149decc7f4344ed
+  zh: 89b84f19bfac2926
+/agent-note-temporal-sdk-activity-example/validation:
+  en: fc833956da8c7f4a
+  zh: 28e6848eb2573c69
+/agent-note-temporal-sdk-activity-example/alternatives-considered:
+  en: e59e4cbb5c2c5aeb
+  zh: 1de00d1562f4e39c
+/agent-note-temporal-sdk-activity-example/consequences:
+  en: 6c9415669c5a8f59
+  zh: 7b157860e9d538bb

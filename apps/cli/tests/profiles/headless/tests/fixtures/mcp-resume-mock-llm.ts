@@ -24,7 +24,8 @@ class McpResumeMockAdapter extends LlmAdapter {
   }
 
   async *stream(_options: GenerateOptions): AsyncIterable<StreamChunk> {
-    const toolResult = _options.messages.at(-1)?.content.find(block => block.type === 'tool-result')
+    const last = _options.messages.at(-1)
+    const toolResult = last?.role === 'tool' ? last : undefined
     if (toolResult === undefined) {
       const args = JSON.stringify({ name: greetName })
       yield { type: 'block-start', index: 0, blockType: 'tool-call' }

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The `guard/` group keeps the agent loop productive by watching for common failure patterns. `repeat-tool-reminder` notices when the model repeats the exact same tool call and reminds it to change approach or finish, so a stuck loop stops burning time and tokens. `timeout-policy` puts a time limit on tool calls that declare one, so a hung call returns a clear timed-out error to the model instead of stalling the session. `call-budget` caps how many tool calls one agent may spend between human inputs: calls within the cap run normally, and the first call beyond it is denied while the turn ends. The first two ship enabled in the `dsh` base bundle and the budget guard is explicit opt-in; a composition can tune or remove all of them.
+The `guard/` group keeps the agent loop productive by watching for common failure patterns. `repeat-tool-reminder` notices when the model repeats the exact same tool call and reminds it to change approach or finish. `timeout-policy` puts a time limit on tool calls that declare one, so a hung call returns a clear timed-out error instead of stalling the session. `call-budget` caps how many tool calls one agent may spend between human inputs; the first call beyond the cap is denied and the turn ends. The first two ship enabled in the `dsh` base bundle and the budget guard is explicit opt-in.
 
 ## Table of Contents
 

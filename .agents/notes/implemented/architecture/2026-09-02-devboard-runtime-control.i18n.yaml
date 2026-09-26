@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-02-devboard-runtime-control.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-02-devboard-runtime-control.md
-2026-09-02-devboard-runtime-control.md: aa778b166b040f65ac8458b241f680a812f7ce9e
-2026-09-02-devboard-runtime-control.zh.md: aceae9c03e1a0927b515275d6b2c42c0ab36bd30
+/agent-note-devboard-managed-web-runtime-control:
+  en: 1dfffdd1bfd73895
+  zh: 7fe0249063389b19
+/agent-note-devboard-managed-web-runtime-control/problem:
+  en: 057a97acfa257209
+  zh: f3ce9317410a3dcd
+/agent-note-devboard-managed-web-runtime-control/decision:
+  en: 82a1c9c86e51965f
+  zh: 120d375af0c7458b
+/agent-note-devboard-managed-web-runtime-control/capability-ownership:
+  en: 0f79d39d629012c9
+  zh: 29072031e7321e5b
+/agent-note-devboard-managed-web-runtime-control/alternatives-considered:
+  en: 60b119c589cfbb90
+  zh: 055d70fec7e8e99c
+/agent-note-devboard-managed-web-runtime-control/consequences:
+  en: f304e76620bae6d0
+  zh: 569509aee664930d

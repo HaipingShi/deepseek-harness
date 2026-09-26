@@ -1,6 +1,58 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/subagent/subagent-a2a/README.md
-README.md: 6d0d7e89dda3eeecb76ee7a4fa10474405d9fb91
-README.zh.md: 15743850e9c3c361fe830ffc4c681823d067c830
+/:
+  en: e8727df778c73beb
+  zh: 39d2b38cdefa4231
+/deepseek-ai-dsh-subagent-a2a:
+  en: c1e9bac7557b65e2
+  zh: c4cc9f394192c06d
+/deepseek-ai-dsh-subagent-a2a/summary:
+  en: b8731d25638bacef
+  zh: 00a46a3541a03793
+/deepseek-ai-dsh-subagent-a2a/table-of-contents:
+  en: ca83ff960e991316
+  zh: 19c81b37d313fc07
+/deepseek-ai-dsh-subagent-a2a/use-this-package:
+  en: 4a00a8e119a2d396
+  zh: efbd671123c0cf7f
+/deepseek-ai-dsh-subagent-a2a/protocol-and-lifecycle:
+  en: cb2455c8c646d226
+  zh: 2d66da8fdd888b53
+/deepseek-ai-dsh-subagent-a2a/security-and-evidence:
+  en: 12e913a329a5b252
+  zh: 0efb923b0ac2ca23
+/deepseek-ai-dsh-subagent-a2a/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-subagent-a2a/model-experience/remote-child-request:
+  en: a65bfa11107c43c1
+  zh: 1bb54ff1625b6f96
+/deepseek-ai-dsh-subagent-a2a/model-experience/remote-child-request/what-the-model-sees:
+  en: 6996edd77a3f6818
+  zh: 9f54aff75e70d9c2
+/deepseek-ai-dsh-subagent-a2a/model-experience/remote-child-request/token-effect:
+  en: 57a355b8cfbcbb69
+  zh: d9b07b15a3fe688f
+/deepseek-ai-dsh-subagent-a2a/model-experience/remote-child-request/kv-cache-effect:
+  en: af5aa2dcb2b474f7
+  zh: 6eccad8a94c70dbd
+/deepseek-ai-dsh-subagent-a2a/model-experience/parent-tool-result-indirectly:
+  en: 75d061c2151624a7
+  zh: 71e58e020b60ff90
+/deepseek-ai-dsh-subagent-a2a/model-experience/parent-tool-result-indirectly/what-the-model-sees:
+  en: 8569d273cf6cfb81
+  zh: 680eb5508e299f31
+/deepseek-ai-dsh-subagent-a2a/model-experience/parent-tool-result-indirectly/token-effect:
+  en: d35b221f326287fb
+  zh: 8facb7bb0704b268
+/deepseek-ai-dsh-subagent-a2a/model-experience/parent-tool-result-indirectly/kv-cache-effect:
+  en: 579b285cae796992
+  zh: a4f7c08b8eb1a40d
+/deepseek-ai-dsh-subagent-a2a/known-limitations-and-deferred-work:
+  en: 94e92b1ce9cc027a
+  zh: e9d6601af16052d6
+/deepseek-ai-dsh-subagent-a2a/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: e88aeb617ffb74ea

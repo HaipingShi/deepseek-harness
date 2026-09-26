@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-external-evaluation-adapters.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-external-evaluation-adapters.md
-2026-08-31-external-evaluation-adapters.md: 13052dd04d3a646e98180baf9a385fe24550023a
-2026-08-31-external-evaluation-adapters.zh.md: a919d547f684a142f3355ffe0e7ce5a702487b06
+/agent-note-external-evaluation-adapters:
+  en: 4c7aaaf42a1c853b
+  zh: 0da9a8fb4aa3d3e1
+/agent-note-external-evaluation-adapters/problem:
+  en: 590e30cf425737ce
+  zh: 8bdc0815cf10bb8e
+/agent-note-external-evaluation-adapters/decision:
+  en: d447e00605c06576
+  zh: 778dc3e8e3c4736a
+/agent-note-external-evaluation-adapters/validation:
+  en: 5db1745523524029
+  zh: 256e1767eed093c7
+/agent-note-external-evaluation-adapters/alternatives-considered:
+  en: c6e7183871a314d4
+  zh: 8e1eb7df809b35cf
+/agent-note-external-evaluation-adapters/consequences:
+  en: 12edb4a0a6f58120
+  zh: f1ca5c6d3a670013

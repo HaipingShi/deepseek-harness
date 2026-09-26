@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-graphiti-mcp-memory-example.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-graphiti-mcp-memory-example.md
-2026-08-31-graphiti-mcp-memory-example.md: b537f54dc97a2ba3767e0e424180936f50a4d3e7
-2026-08-31-graphiti-mcp-memory-example.zh.md: 92625467b300bbcf578281bf5ac67b53b68659ec
+/agent-note-graphiti-mcp-memory-example:
+  en: 1632bd6e94b0adc9
+  zh: e947bd9397b90c2b
+/agent-note-graphiti-mcp-memory-example/problem:
+  en: b4fc86d13f5ebb00
+  zh: 0b304d380f019cb8
+/agent-note-graphiti-mcp-memory-example/decision:
+  en: dd7bf0fbb40f2bee
+  zh: 3c7acf9ce732dd59
+/agent-note-graphiti-mcp-memory-example/validation:
+  en: 003bf16f7e6984eb
+  zh: 5f18fe379fbacadf
+/agent-note-graphiti-mcp-memory-example/alternatives-considered:
+  en: 2957625c1da891f0
+  zh: c850a59e4d28b2aa
+/agent-note-graphiti-mcp-memory-example/consequences:
+  en: 5d9c625a802d6535
+  zh: a640d967da7ec0a8

@@ -4,6 +4,7 @@ import Loader from '@deepseek-ai/cordis-plugin-loader'
 import { createUserMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import type { StreamChunk } from '@deepseek-ai/dsh-llm'
 import { SessionId, type SessionEvent } from '@deepseek-ai/dsh-session'
+import { GoalId } from '@deepseek-ai/dsh-goal'
 import { defineContentToolFixture } from '@deepseek-ai/dsh-tools'
 import type { Config } from '@deepseek-ai/dsh-call-budget'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -141,9 +142,9 @@ describe('deterministic caps over varying arguments', () => {
     })
     // The over-budget call's visible result quotes the same reason.
     const lastResult = eventsOf(agent).findLast((e): e is SessionEvent<'tool/result'> => e.type === 'tool/result')
-    const resultBlock = lastResult?.data.message.content[0]
-    expect(resultBlock).toMatchObject({ type: 'tool-result', isError: true })
-    expect(resultBlock?.type === 'tool-result' && resultBlock.content[0]).toMatchObject({
+    const resultMessage = lastResult?.data.message
+    expect(resultMessage).toMatchObject({ role: 'tool', isError: true })
+    expect(resultMessage?.role === 'tool' && resultMessage.content[0]).toMatchObject({
       type: 'text',
       text: 'Error: tool call budget exhausted: the total budget of 8 tool calls for this turn is spent',
     })
@@ -288,10 +289,10 @@ describe('budget windows', () => {
     expect(lastTurnEnd(agent)).toMatchObject({ reason: { kind: 'aborted', reason: { kind: 'hook' } } })
     const requestsAfterStop = adapter.requests.length
 
-    // Machine continuation (plugin-sourced followup): rejected before any request.
+    // Machine continuation (goal-sourced followup): rejected before any request.
     agent.followup(createUserMessage({
       content: [{ type: 'text', text: 'continue working' }],
-      source: { kind: 'plugin', plugin: 'round-driver', form: 'notice', summary: 'continue' },
+      source: { kind: 'goal', goalId: GoalId('budget-continuation'), revision: 1, round: 2 },
     }))
     await waitForIdle(ctx, agent)
     expect(adapter.requests).toHaveLength(requestsAfterStop)

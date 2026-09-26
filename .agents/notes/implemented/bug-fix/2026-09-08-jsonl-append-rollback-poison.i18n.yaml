@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-08-jsonl-append-rollback-poison.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-08-jsonl-append-rollback-poison.md
-2026-09-08-jsonl-append-rollback-poison.md: 0b290bc74a3dbc09b7de12a3fe236542d68e24e7
-2026-09-08-jsonl-append-rollback-poison.zh.md: 1a33137cfd0556ca534680fca0db4f9eb5746f7d
+/agent-note-jsonl-append-rollback-failure-poisons-the-handle:
+  en: 890adc9d998c3ae7
+  zh: 80b7180815bf3afa
+/agent-note-jsonl-append-rollback-failure-poisons-the-handle/problem:
+  en: 6712ce48b623fc47
+  zh: d533b812448ccf26
+/agent-note-jsonl-append-rollback-failure-poisons-the-handle/decision:
+  en: 43dc193a522fc4c5
+  zh: 2d0a716974cde7c5
+/agent-note-jsonl-append-rollback-failure-poisons-the-handle/alternatives-considered:
+  en: 7940136783e899a7
+  zh: 4f9a64dd5b2bba5d
+/agent-note-jsonl-append-rollback-failure-poisons-the-handle/consequences:
+  en: 0036eb896a578376
+  zh: 8de676644f9795ad
+/agent-note-jsonl-append-rollback-failure-poisons-the-handle/testing:
+  en: 4c346d6aa56e7fd1
+  zh: edf17c90a7e80fd3
