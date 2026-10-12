@@ -40,9 +40,12 @@ class FakeRuntime extends PtcRuntime {
 }
 
 /** Boot the core spine + the guard; the caller registers adapters. */
-async function harness(config: Config, options: { tools?: { mode: 'ptc' | 'native' | 'both' } } = {}): Promise<Context> {
+async function harness(config: Config, options: { tools?: { mode: 'ptc' | 'native' } } = {}): Promise<Context> {
   const ctx = new Context()
-  await mountAgentLoopTestDependencies(ctx, options.tools === undefined ? {} : { tools: options.tools })
+  const testkit = options.tools === undefined
+    ? {}
+    : { tools: options.tools, workingDirectory: options.tools !== undefined }
+  await mountAgentLoopTestDependencies(ctx, testkit)
   await ctx.plugin(AgentLoop, { agents: [] })
   await ctx.plugin(ToolCallBudget, config)
   if (options.tools !== undefined) await ctx.plugin(FakeRuntime)

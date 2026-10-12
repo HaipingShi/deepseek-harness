@@ -271,7 +271,6 @@ function startRun(
   let disposed: Promise<void> | undefined
   return {
     id,
-    localAgent: undefined,
     result,
     dispose: () => {
       disposed ??= (async () => {

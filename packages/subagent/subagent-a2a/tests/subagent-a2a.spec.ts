@@ -25,6 +25,10 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import SubagentRuntime from '@deepseek-ai/dsh-subagent'
+import AgentLoop from '@deepseek-ai/dsh-agent-loop'
+import { mountAgentLoopTestDependencies } from '@deepseek-ai/dsh-agent-loop-testkit'
+import { mountWorkingDirectoryFixture } from '../../subagent/tests/working-directory-fixture.ts'
+import { MockAdapter, textResponse } from '../../../core/agent-loop/tests/mock-adapter.ts'
 import * as a2a from '../src/index.ts'
 
 const servers: Server[] = []
@@ -134,13 +138,10 @@ async function listenA2A(
   return baseUrl
 }
 
-function parent(): Agent {
-  return { id: SessionId('parent') } as unknown as Agent
-}
-
-async function setup(agentUrl: string, headers: Record<string, string> = {}): Promise<Context> {
+async function setup(agentUrl: string, headers: Record<string, string> = {}): Promise<{ ctx: Context; parent: Agent }> {
   const ctx = new Context()
-  await ctx.plugin(SessionProjectionRegistry)
+  await mountAgentLoopTestDependencies(ctx, { workingDirectory: true })
+  await ctx.plugin(AgentLoop, { agents: [] })
   await ctx.plugin(SubagentRuntime)
   await ctx.plugin(a2a, {
     providerName: 'a2a',
@@ -149,7 +150,9 @@ async function setup(agentUrl: string, headers: Record<string, string> = {}): Pr
     allowedOrigins: [],
     headers,
   })
-  return ctx
+  ctx.llm.registerAdapter(['mock'], new MockAdapter([textResponse('parent idle')]))
+  const parent = await ctx.agentLoop.create(SessionId('parent'), { provider: 'mock', model: 'mock' })
+  return { ctx, parent }
 }
 
 describe('A2A result mapping', () => {
@@ -194,18 +197,19 @@ describe('A2A provider through the official SDK', () => {
   it('discovers the Agent Card, sends authorization, and completes a text run', async () => {
     const observedAuthorization: Array<string | undefined> = []
     const baseUrl = await listenA2A((value) => { observedAuthorization.push(value) })
-    const ctx = await setup(baseUrl, { authorization: 'Bearer fixture-token' })
-    const run = await ctx.subagents.start('a2a', {
-      prompt: [{ type: 'text', text: 'hello' }],
-      parent: parent(),
+    const { ctx, parent } = await setup(baseUrl, { authorization: 'Bearer fixture-token' })
+    const run = await ctx.subagents.startActivation({
+      provider: 'a2a',
+      label: 'a2a fixture task',
+      request: { prompt: [{ type: 'text', text: 'hello' }], parent },
       signal: new AbortController().signal,
+      delivery: 'caller',
     })
 
     await expect(run.result).resolves.toEqual({
       output: [{ type: 'text', text: 'remote:hello' }],
       stopReason: 'completed',
     })
-    expect(run.localAgent).toBeUndefined()
     expect(observedAuthorization).toEqual(['Bearer fixture-token', 'Bearer fixture-token'])
     await run.dispose()
     await ctx.fiber.dispose()
@@ -213,16 +217,19 @@ describe('A2A provider through the official SDK', () => {
 
   it('fails before publication for unsupported prompt content and unsafe URLs', async () => {
     const baseUrl = await listenA2A()
-    const ctx = await setup(baseUrl)
-    await expect(ctx.subagents.start('a2a', {
-      prompt: [{ type: 'reasoning', text: 'private' }],
-      parent: parent(),
+    const { ctx, parent } = await setup(baseUrl)
+    await expect(ctx.subagents.startActivation({
+      provider: 'a2a',
+      label: 'a2a fixture task',
+      request: { prompt: [{ type: 'reasoning', text: 'private' }], parent },
       signal: new AbortController().signal,
+      delivery: 'caller',
     })).rejects.toThrow('accepts text prompt blocks only')
     await ctx.fiber.dispose()
 
     const unsafe = new Context()
     await unsafe.plugin(SessionProjectionRegistry)
+    await mountWorkingDirectoryFixture(unsafe)
     await unsafe.plugin(SubagentRuntime)
     await expect(unsafe.plugin(a2a, {
       providerName: 'a2a',
@@ -242,11 +249,13 @@ describe('A2A provider through the official SDK', () => {
       (value) => { observedAuthorization.push(value) },
       'https://unapproved.example/a2a',
     )
-    const ctx = await setup(baseUrl, { authorization: 'Bearer fixture-token' })
-    const run = await ctx.subagents.start('a2a', {
-      prompt: [{ type: 'text', text: 'hello' }],
-      parent: parent(),
+    const { ctx, parent } = await setup(baseUrl, { authorization: 'Bearer fixture-token' })
+    const run = await ctx.subagents.startActivation({
+      provider: 'a2a',
+      label: 'a2a fixture task',
+      request: { prompt: [{ type: 'text', text: 'hello' }], parent },
       signal: new AbortController().signal,
+      delivery: 'caller',
     })
 
     await expect(run.result).resolves.toEqual({
