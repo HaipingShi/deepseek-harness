@@ -50,8 +50,8 @@ export interface RuntimeControlState {
 export interface RuntimeControlOptions {
   /** Immutable process launch environment with source attribution. */
   readonly environment: LaunchEnvironmentSnapshot
-  /** Bound loopback HTTP port announced after application readiness. */
-  readonly port: number
+  /** Reads the bound loopback HTTP port, announced after application readiness; `undefined` until `listen` binds. */
+  readonly port: () => number | undefined
   /** Mint one fresh browser capability after a valid open request. */
   readonly createHandoffUrl: () => string
   /** Revoke every unconsumed browser capability owned by this process. */
@@ -128,6 +128,14 @@ function parseOpenRequest(value: unknown, runId: string): OpenRequest | undefine
   return value as unknown as OpenRequest
 }
 
+/** Read the bound port or fail loud; readiness and handoffs require a listener in the valid range. */
+function requirePort(port: number | undefined): number {
+  if (port === undefined || !Number.isInteger(port) || port < 1 || port > 65535) {
+    throw runtimeControlError('ENDPOINT_INVALID')
+  }
+  return port
+}
+
 function canonicalHandoffUrl(value: string, port: number): string | undefined {
   if (value.length === 0 || value.length > MAX_HANDOFF_URL_LENGTH) return undefined
   let url: URL
@@ -171,15 +179,11 @@ export class DevBoardRuntimeControl {
 
   constructor(
     private readonly managed: ManagedEnvironment,
-    private readonly port: number,
+    private readonly port: () => number | undefined,
     private readonly createHandoffUrl: () => string,
     private readonly invalidateHandoffs: () => void,
     private readonly webSocketFactory: RuntimeControlWebSocketFactory,
-  ) {
-    if (!Number.isInteger(port) || port < 1 || port > 65535) {
-      throw runtimeControlError('ENDPOINT_INVALID')
-    }
-  }
+  ) {}
 
   /**
    * Connect, authenticate through HTTP headers, and send `hello`.
@@ -235,7 +239,7 @@ export class DevBoardRuntimeControl {
         protocol: PROTOCOL,
         type: 'ready',
         runId: this.managed.runId,
-        endpoint: { id: ENDPOINT_ID, host: LOOPBACK_HOST, port: this.port },
+        endpoint: { id: ENDPOINT_ID, host: LOOPBACK_HOST, port: requirePort(this.port()) },
         openMode: OPEN_MODE,
       })
       this.phase = 'READY'
@@ -288,7 +292,7 @@ export class DevBoardRuntimeControl {
     }
     let handoffUrl: string | undefined
     try {
-      handoffUrl = canonicalHandoffUrl(this.createHandoffUrl(), this.port)
+      handoffUrl = canonicalHandoffUrl(this.createHandoffUrl(), requirePort(this.port()))
     } catch {
       // Capability creation failures are represented on the control protocol.
     }
@@ -374,6 +378,11 @@ export function createDevBoardRuntimeControl(
 ): DevBoardRuntimeControl | undefined {
   const managed = resolveManagedEnvironment(options.environment)
   if (managed === undefined) return undefined
+  // Fail fast on a port already known invalid; a still-unbound listener validates at first use.
+  const earlyPort = options.port()
+  if (earlyPort !== undefined && (!Number.isInteger(earlyPort) || earlyPort < 1 || earlyPort > 65535)) {
+    throw runtimeControlError('ENDPOINT_INVALID')
+  }
   return new DevBoardRuntimeControl(
     managed,
     options.port,

@@ -76,7 +76,7 @@ function harness(options: {
   const factory = vi.fn<RuntimeControlWebSocketFactory>(() => socket as unknown as WebSocket)
   const control = createDevBoardRuntimeControl({
     environment: managedEnvironment(),
-    port: 4567,
+    port: () => 4567,
     createHandoffUrl: options.createHandoffUrl
       ?? (() => `http://127.0.0.1:4567/?token=${HANDOFF_TOKEN}`),
     invalidateHandoffs: options.invalidateHandoffs ?? (() => {}),
@@ -105,7 +105,7 @@ describe('DevBoard runtime control environment', () => {
   it('preserves standalone behavior only when all three fields are absent', () => {
     const control = createDevBoardRuntimeControl({
       environment: createLaunchEnvironmentSnapshot([{ source: 'process', values: {} }]),
-      port: 4567,
+      port: () => 4567,
       createHandoffUrl: () => '',
       invalidateHandoffs: () => {},
     })
@@ -167,7 +167,7 @@ describe('DevBoard runtime control environment', () => {
   ])('fails closed for a partial or malformed process environment', (values) => {
     expect(() => createDevBoardRuntimeControl({
       environment: createLaunchEnvironmentSnapshot([{ source: 'process', values }]),
-      port: 4567,
+      port: () => 4567,
       createHandoffUrl: () => '',
       invalidateHandoffs: () => {},
     })).toThrow('ENV_INVALID')
@@ -184,7 +184,7 @@ describe('DevBoard runtime control environment', () => {
           DEVBOARD_CONTROL_GRANT: GRANT,
         },
       }]),
-      port: 4567,
+      port: () => 4567,
       createHandoffUrl: () => '',
       invalidateHandoffs: () => {},
     })).toThrow('ENV_INVALID')
@@ -193,7 +193,7 @@ describe('DevBoard runtime control environment', () => {
   it.each([0, 65536, 1.5])('rejects invalid endpoint port %s', (port) => {
     expect(() => createDevBoardRuntimeControl({
       environment: managedEnvironment(),
-      port,
+      port: () => port,
       createHandoffUrl: () => '',
       invalidateHandoffs: () => {},
     })).toThrow('ENDPOINT_INVALID')
@@ -255,7 +255,7 @@ describe('DevBoard runtime control lifecycle', () => {
     vi.stubGlobal('WebSocket', PlatformSocket)
     const control = createDevBoardRuntimeControl({
       environment: managedEnvironment(),
-      port: 4567,
+      port: () => 4567,
       createHandoffUrl: () => `http://127.0.0.1:4567/?token=${HANDOFF_TOKEN}`,
       invalidateHandoffs: () => {},
     })
@@ -281,7 +281,7 @@ describe('DevBoard runtime control lifecycle', () => {
     const factory = vi.fn<RuntimeControlWebSocketFactory>(() => { throw new Error(`private ${GRANT}`) })
     const failed = createDevBoardRuntimeControl({
       environment: managedEnvironment(),
-      port: 4567,
+      port: () => 4567,
       createHandoffUrl: () => '',
       invalidateHandoffs,
       webSocketFactory: factory,
